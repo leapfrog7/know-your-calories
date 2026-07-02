@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { foods, getFoodById } from "../data/foods";
+import { getAllFoods, getFoodById } from "../data/foods";
 import TodaySummaryCard from "../components/today/TodaySummaryCard";
 import QuickAddStrip from "../components/today/QuickAddStrip";
 import MealGroup from "../components/today/MealGroup";
@@ -37,10 +37,10 @@ function TodayPage({ onOpenAddFood }) {
     const ids = [...new Set([...recentIds, ...frequentIds])];
 
     if (ids.length === 0) {
-      return foods.slice(0, 6);
+      return getAllFoods().slice(0, 6);
     }
 
-   return ids.map(getFoodById).filter(Boolean).slice(0, 6);
+    return ids.map(getFoodById).filter(Boolean).slice(0, 6);
   }, [entries]);
 
   function handleDelete(entryId) {
@@ -60,6 +60,7 @@ function TodayPage({ onOpenAddFood }) {
             <h2 className="text-xl font-black tracking-tight text-slate-950">
               Meals
             </h2>
+
             <p className="text-sm text-slate-500">
               {entries.length} item{entries.length === 1 ? "" : "s"} logged
               today

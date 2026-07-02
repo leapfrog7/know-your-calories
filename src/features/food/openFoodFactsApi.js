@@ -115,7 +115,11 @@ function getServingDisplayUnit(product) {
   return isPackagedDrink(product) ? "ml" : "g";
 }
 
-function buildPackagedPortions(servingQuantity, servingLabel, displayUnit = "g") {
+function buildPackagedPortions(
+  servingQuantity,
+  servingLabel,
+  displayUnit = "g",
+) {
   if (displayUnit === "ml") {
     const beveragePortions = [
       { label: "100 ml", type: "grams", grams: 100, displayUnit: "ml" },
@@ -133,7 +137,7 @@ function buildPackagedPortions(servingQuantity, servingLabel, displayUnit = "g")
           displayUnit: "ml",
         },
         ...beveragePortions.filter(
-          (portion) => portion.grams !== servingQuantity
+          (portion) => portion.grams !== servingQuantity,
         ),
       ];
     }
@@ -171,14 +175,14 @@ export function normalizeOpenFoodFactsProduct(product) {
   const barcode = cleanText(product.code);
   const name = getProductName(product);
   const brand = getBrand(product);
- const servingQuantity = getServingQuantity(product);
-const servingSize = cleanText(product.serving_size);
-const displayUnit = getServingDisplayUnit(product);
+  const servingQuantity = getServingQuantity(product);
+  const servingSize = cleanText(product.serving_size);
+  const displayUnit = getServingDisplayUnit(product);
 
-const servingLabel =
-  servingQuantity > 0
-    ? servingSize || `${servingQuantity}${displayUnit}`
-    : `100${displayUnit}`;
+  const servingLabel =
+    servingQuantity > 0
+      ? servingSize || `${servingQuantity}${displayUnit}`
+      : `100${displayUnit}`;
 
   return {
     id: `off-${barcode || crypto.randomUUID()}`,
@@ -191,7 +195,9 @@ const servingLabel =
     category: getPackagedCategory(product),
     foodType: "packaged",
     cuisine: "Packaged",
-    aliases: [name, brand, barcode].filter(Boolean).map((item) => item.toLowerCase()),
+    aliases: [name, brand, barcode]
+      .filter(Boolean)
+      .map((item) => item.toLowerCase()),
 
     caloriesPer100g: toNumber(nutriments["energy-kcal_100g"]),
     energyKjPer100g: toNumber(nutriments.energy_100g),
@@ -199,17 +205,17 @@ const servingLabel =
     carbsPer100g: toNumber(nutriments.carbohydrates_100g),
     fatPer100g: toNumber(nutriments.fat_100g),
     freeSugarPer100g: toNumber(nutriments.sugars_100g),
-servingUnitRaw: displayUnit,
-servingUnitGroup: displayUnit === "ml" ? "drink" : "measure",
+    servingUnitRaw: displayUnit,
+    servingUnitGroup: displayUnit === "ml" ? "drink" : "measure",
 
     unitServing: null,
     defaultServing: {
-  label: servingLabel,
-  type: "grams",
-  grams: servingQuantity || 100,
-  displayUnit,
-},
-   portions: buildPackagedPortions(servingQuantity, servingLabel, displayUnit),
+      label: servingLabel,
+      type: "grams",
+      grams: servingQuantity || 100,
+      displayUnit,
+    },
+    portions: buildPackagedPortions(servingQuantity, servingLabel, displayUnit),
 
     imageUrl: product.image_front_small_url || product.image_front_url || "",
     dataQuality: "open-food-facts",

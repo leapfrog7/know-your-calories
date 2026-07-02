@@ -1,144 +1,121 @@
+// Auto-generated from raw-data/packaged-barcodes.json.
+// Do not edit manually. Edit raw-data/packaged-barcodes.json and rerun npm.cmd run convert:packaged.
+
 export const packagedFoods = [
   {
-    id: "off-marie-biscuit",
-    source: "Open Food Facts",
-    name: "Marie Biscuit",
-    shortName: "Marie",
-    category: "Packaged Snacks",
-    foodType: "packaged",
-    cuisine: "Packaged",
-    aliases: ["marie", "biscuit", "biscuits", "tea biscuit"],
-
-    caloriesPer100g: 430,
-    proteinPer100g: 7,
-    carbsPer100g: 74,
-    fatPer100g: 11,
-
-    defaultServing: {
-      label: "4 biscuits",
-      grams: 30,
-    },
-
-    portions: [
-      { label: "2 biscuits", grams: 15 },
-      { label: "4 biscuits", grams: 30 },
-      { label: "6 biscuits", grams: 45 },
-      { label: "100g", grams: 100 },
+    "id": "pkg-8901725181222-yippee-noodles",
+    "source": "Curated Packaged",
+    "sourceFoodCode": "8901725181222",
+    "barcode": "8901725181222",
+    "brand": "",
+    "name": "Yippee noodles",
+    "shortName": "Yippee noodles",
+    "category": "Packaged Foods",
+    "foodType": "packaged",
+    "cuisine": "Packaged",
+    "aliases": [
+      "yippee noodles",
+      "8901725181222",
+      "yippee",
+      "noodles"
     ],
-
-    notes: "Packaged biscuit values vary by brand. Check label where available.",
+    "caloriesPer100g": 110,
+    "energyKjPer100g": 1950.43,
+    "proteinPer100g": 8.86,
+    "carbsPer100g": 62.43,
+    "fatPer100g": 19.71,
+    "freeSugarPer100g": 2.86,
+    "servingUnitRaw": "g",
+    "servingUnitGroup": "measure",
+    "unitServing": null,
+    "defaultServing": {
+      "label": "100g",
+      "type": "grams",
+      "grams": 100,
+      "displayUnit": "g"
+    },
+    "portions": [
+      {
+        "label": "25g",
+        "type": "grams",
+        "grams": 25,
+        "displayUnit": "g"
+      },
+      {
+        "label": "50g",
+        "type": "grams",
+        "grams": 50,
+        "displayUnit": "g"
+      },
+      {
+        "label": "100g",
+        "type": "grams",
+        "grams": 100,
+        "displayUnit": "g"
+      }
+    ],
+    "imageUrl": "https://images.openfoodfacts.org/images/products/890/172/518/1222/front_fr.9.200.jpg",
+    "dataQuality": "curated-open-food-facts",
+    "notes": "Curated from Open Food Facts at build time. Check current packet label for exact variant."
   },
   {
-    id: "off-potato-chips",
-    source: "Open Food Facts",
-    name: "Potato Chips",
-    shortName: "Chips",
-    category: "Packaged Snacks",
-    foodType: "packaged",
-    cuisine: "Packaged",
-    aliases: ["chips", "potato chips", "lays", "crisps"],
-
-    caloriesPer100g: 540,
-    proteinPer100g: 6,
-    carbsPer100g: 53,
-    fatPer100g: 34,
-
-    defaultServing: {
-      label: "1 small pack",
-      grams: 30,
-    },
-
-    portions: [
-      { label: "Small handful", grams: 20 },
-      { label: "Small pack", grams: 30 },
-      { label: "Medium pack", grams: 52 },
-      { label: "100g", grams: 100 },
+    "id": "pkg-8904063200730-chilli-chatak-lachha",
+    "source": "Curated Packaged",
+    "sourceFoodCode": "8904063200730",
+    "barcode": "8904063200730",
+    "brand": "Haldiram's",
+    "name": "Chilli Chatak Lachha · Haldiram's",
+    "shortName": "Chilli Chatak Lachha",
+    "category": "Packaged Foods",
+    "foodType": "packaged",
+    "cuisine": "Packaged",
+    "aliases": [
+      "chilli chatak lachha",
+      "haldiram's",
+      "8904063200730",
+      "chilli",
+      "chatak",
+      "lachha",
+      "haldiram",
+      "s"
     ],
-
-    notes: "Approximation for fried packaged potato chips.",
-  },
-  {
-    id: "off-instant-noodles",
-    source: "Open Food Facts",
-    name: "Instant Noodles",
-    shortName: "Noodles",
-    category: "Packaged Meals",
-    foodType: "packaged",
-    cuisine: "Packaged",
-    aliases: ["instant noodles", "maggi", "noodles"],
-
-    caloriesPer100g: 450,
-    proteinPer100g: 8,
-    carbsPer100g: 62,
-    fatPer100g: 18,
-
-    defaultServing: {
-      label: "1 pack dry",
-      grams: 70,
+    "caloriesPer100g": 542.86,
+    "energyKjPer100g": 2291.43,
+    "proteinPer100g": 8.57,
+    "carbsPer100g": 60,
+    "fatPer100g": 28.57,
+    "freeSugarPer100g": 0,
+    "servingUnitRaw": "g",
+    "servingUnitGroup": "measure",
+    "unitServing": null,
+    "defaultServing": {
+      "label": "100g",
+      "type": "grams",
+      "grams": 100,
+      "displayUnit": "g"
     },
-
-    portions: [
-      { label: "Half pack", grams: 35 },
-      { label: "1 pack", grams: 70 },
-      { label: "Large pack", grams: 100 },
+    "portions": [
+      {
+        "label": "25g",
+        "type": "grams",
+        "grams": 25,
+        "displayUnit": "g"
+      },
+      {
+        "label": "50g",
+        "type": "grams",
+        "grams": 50,
+        "displayUnit": "g"
+      },
+      {
+        "label": "100g",
+        "type": "grams",
+        "grams": 100,
+        "displayUnit": "g"
+      }
     ],
-
-    notes: "Dry packaged value. Cooked weight changes after adding water.",
-  },
-  {
-    id: "off-white-bread",
-    source: "Open Food Facts",
-    name: "White Bread",
-    shortName: "Bread",
-    category: "Packaged Breads",
-    foodType: "packaged",
-    cuisine: "Packaged",
-    aliases: ["bread", "white bread", "slice bread"],
-
-    caloriesPer100g: 265,
-    proteinPer100g: 9,
-    carbsPer100g: 49,
-    fatPer100g: 3.2,
-
-    defaultServing: {
-      label: "2 slices",
-      grams: 50,
-    },
-
-    portions: [
-      { label: "1 slice", grams: 25 },
-      { label: "2 slices", grams: 50 },
-      { label: "4 slices", grams: 100 },
-    ],
-
-    notes: "Approximation for packaged white bread.",
-  },
-  {
-    id: "off-cola",
-    source: "Open Food Facts",
-    name: "Cola / Soft Drink",
-    shortName: "Cola",
-    category: "Drinks",
-    foodType: "packaged",
-    cuisine: "Packaged",
-    aliases: ["cola", "cold drink", "soft drink", "coke", "pepsi"],
-
-    caloriesPer100g: 42,
-    proteinPer100g: 0,
-    carbsPer100g: 10.6,
-    fatPer100g: 0,
-
-    defaultServing: {
-      label: "1 glass",
-      grams: 250,
-    },
-
-    portions: [
-      { label: "Small glass", grams: 150 },
-      { label: "Glass", grams: 250 },
-      { label: "500 ml bottle", grams: 500 },
-    ],
-
-    notes: "Approximation for regular sugary cola. Diet versions differ.",
-  },
+    "imageUrl": "https://images.openfoodfacts.org/images/products/890/406/320/0730/front_en.24.200.jpg",
+    "dataQuality": "curated-open-food-facts",
+    "notes": "Curated from Open Food Facts at build time. Check current packet label for exact variant."
+  }
 ];

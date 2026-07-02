@@ -6,20 +6,19 @@ const MIN_OFF_SEARCH_LENGTH = 3;
 
 function OpenFoodFactsSearch({ query, onSelectFood }) {
   const cleanQuery = query.trim();
+  const canSearch = cleanQuery.length >= MIN_OFF_SEARCH_LENGTH;
 
   const [status, setStatus] = useState("idle");
   const [results, setResults] = useState([]);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    if (cleanQuery.length < MIN_OFF_SEARCH_LENGTH) {
-      setStatus("idle");
-      setResults([]);
-      setMessage("");
+    if (!canSearch) {
       return;
     }
 
     const controller = new AbortController();
+
     const timer = window.setTimeout(async () => {
       try {
         setStatus("loading");
@@ -42,7 +41,14 @@ function OpenFoodFactsSearch({ query, onSelectFood }) {
 
         setResults([]);
         setStatus("error");
-        setMessage(error.message || "Could not search Open Food Facts.");
+
+        if (error instanceof TypeError) {
+          setMessage(
+            "Browser blocked the Open Food Facts search request. This is likely a CORS issue.",
+          );
+        } else {
+          setMessage(error.message || "Could not search Open Food Facts.");
+        }
       }
     }, 500);
 
@@ -50,12 +56,14 @@ function OpenFoodFactsSearch({ query, onSelectFood }) {
       controller.abort();
       window.clearTimeout(timer);
     };
-  }, [cleanQuery]);
+  }, [canSearch, cleanQuery]);
 
-  if (cleanQuery.length < MIN_OFF_SEARCH_LENGTH) {
+  if (!canSearch) {
     return (
       <section className="rounded-[1.75rem] border border-dashed border-slate-300 bg-white p-5 text-center">
-        <p className="font-black text-slate-800">Search packaged foods online</p>
+        <p className="font-black text-slate-800">
+          Search packaged foods online
+        </p>
         <p className="mt-1 text-sm text-slate-500">
           Type at least 3 letters to search Open Food Facts.
         </p>
@@ -83,11 +91,7 @@ function OpenFoodFactsSearch({ query, onSelectFood }) {
       {results.length > 0 && (
         <div className="space-y-3">
           {results.map((food) => (
-            <FoodResultCard
-              key={food.id}
-              food={food}
-              onSelect={onSelectFood}
-            />
+            <FoodResultCard key={food.id} food={food} onSelect={onSelectFood} />
           ))}
         </div>
       )}

@@ -1,12 +1,12 @@
 import { useMemo, useState } from "react";
-import { foods, getFoodById } from "../../data/foods";
+import { getAllFoods, getFoodById } from "../../data/foods";
+import CustomFoodForm from "./CustomFoodForm";
 import { addEntryToDate, getAllDays } from "../meals/mealStorage";
 import { getFrequentFoodIds, getRecentFoodIds } from "../meals/mealHelpers";
 import FoodSearchInput from "./FoodSearchInput";
 import FoodResultCard from "./FoodResultCard";
 import SelectedFoodPanel from "./SelectedFoodPanel";
 import BarcodeLookup from "./BarcodeLookup";
-import OpenFoodFactsSearch from "./OpenFoodFactsSearch";
 
 const FILTERS = [
   {
@@ -55,23 +55,28 @@ function AddFoodScreen({ initialFoodId = null, onBack, onFoodAdded }) {
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
   const [selectedFood, setSelectedFood] = useState(initialFood || null);
+  const [showCustomForm, setShowCustomForm] = useState(false);
+  const [customRefreshKey, setCustomRefreshKey] = useState(0);
+
+  const allFoods = useMemo(() => getAllFoods(), [customRefreshKey]);
 
   const days = getAllDays();
   const query = search.trim().toLowerCase();
- const canSearch =
-  activeFilter === "packaged" ? query.length >= 3 : query.length >= 2;
+
+  const canSearch =
+    activeFilter === "packaged" ? query.length >= 3 : query.length >= 2;
 
   const sourceFilteredFoods = useMemo(() => {
     if (activeFilter === "indian") {
-      return foods.filter((food) => food.source === "INDB");
+      return allFoods.filter((food) => food.source === "INDB");
     }
 
     if (activeFilter === "packaged") {
-      return foods.filter((food) => food.foodType === "packaged");
+      return allFoods.filter((food) => food.foodType === "packaged");
     }
 
-    return foods;
-  }, [activeFilter]);
+    return allFoods;
+  }, [activeFilter, allFoods]);
 
   const recentFoods = useMemo(() => {
     const recentIds = getRecentFoodIds(days, 8);
@@ -80,7 +85,7 @@ function AddFoodScreen({ initialFoodId = null, onBack, onFoodAdded }) {
       .map(getFoodById)
       .filter(Boolean)
       .filter((food) => matchesActiveFilter(food, activeFilter));
-  }, [days, activeFilter]);
+  }, [days, activeFilter, customRefreshKey]);
 
   const frequentFoods = useMemo(() => {
     const frequentIds = getFrequentFoodIds(days, 8);
@@ -89,19 +94,19 @@ function AddFoodScreen({ initialFoodId = null, onBack, onFoodAdded }) {
       .map(getFoodById)
       .filter(Boolean)
       .filter((food) => matchesActiveFilter(food, activeFilter));
-  }, [days, activeFilter]);
+  }, [days, activeFilter, customRefreshKey]);
 
   const popularIndianFoods = useMemo(() => {
-    return getPopularFoodsByKeywords(foods, POPULAR_INDIAN_KEYWORDS)
+    return getPopularFoodsByKeywords(allFoods, POPULAR_INDIAN_KEYWORDS)
       .filter((food) => food.source === "INDB")
       .slice(0, 10);
-  }, []);
+  }, [allFoods]);
 
   const popularPackagedFoods = useMemo(() => {
-    return getPopularFoodsByKeywords(foods, POPULAR_PACKAGED_KEYWORDS)
+    return getPopularFoodsByKeywords(allFoods, POPULAR_PACKAGED_KEYWORDS)
       .filter((food) => food.foodType === "packaged")
       .slice(0, 8);
-  }, []);
+  }, [allFoods]);
 
   const filteredFoods = useMemo(() => {
     if (!canSearch) {
@@ -110,14 +115,16 @@ function AddFoodScreen({ initialFoodId = null, onBack, onFoodAdded }) {
 
     return sourceFilteredFoods
       .filter((food) => {
-        const nameMatch = food.name.toLowerCase().includes(query);
+        const nameMatch = food.name?.toLowerCase().includes(query);
         const shortNameMatch = food.shortName?.toLowerCase().includes(query);
-        const categoryMatch = food.category.toLowerCase().includes(query);
-        const sourceMatch = food.source.toLowerCase().includes(query);
+        const categoryMatch = food.category?.toLowerCase().includes(query);
+        const sourceMatch = food.source?.toLowerCase().includes(query);
         const cuisineMatch = food.cuisine?.toLowerCase().includes(query);
         const foodTypeMatch = food.foodType?.toLowerCase().includes(query);
+        const brandMatch = food.brand?.toLowerCase().includes(query);
+        const barcodeMatch = food.barcode?.toLowerCase().includes(query);
         const aliasMatch = food.aliases?.some((alias) =>
-          alias.toLowerCase().includes(query)
+          alias.toLowerCase().includes(query),
         );
 
         return (
@@ -127,6 +134,8 @@ function AddFoodScreen({ initialFoodId = null, onBack, onFoodAdded }) {
           sourceMatch ||
           cuisineMatch ||
           foodTypeMatch ||
+          brandMatch ||
+          barcodeMatch ||
           aliasMatch
         );
       })
@@ -141,6 +150,21 @@ function AddFoodScreen({ initialFoodId = null, onBack, onFoodAdded }) {
   function handleFilterChange(filterId) {
     setActiveFilter(filterId);
     setSelectedFood(null);
+  }
+
+  function handleCustomFoodSaved(food) {
+    setCustomRefreshKey((key) => key + 1);
+    setShowCustomForm(false);
+    setSelectedFood(food);
+  }
+
+  if (showCustomForm) {
+    return (
+      <CustomFoodForm
+        onCancel={() => setShowCustomForm(false)}
+        onSaved={handleCustomFoodSaved}
+      />
+    );
   }
 
   if (selectedFood) {
@@ -169,7 +193,7 @@ function AddFoodScreen({ initialFoodId = null, onBack, onFoodAdded }) {
             Add Food
           </h2>
           <p className="text-sm text-slate-500">
-            Search food or choose a common item
+            Search food, scan barcode, or add custom food
           </p>
         </div>
       </div>
@@ -178,11 +202,25 @@ function AddFoodScreen({ initialFoodId = null, onBack, onFoodAdded }) {
 
       <FilterTabs activeFilter={activeFilter} onChange={handleFilterChange} />
 
+      <button
+        type="button"
+        onClick={() => setShowCustomForm(true)}
+        className="w-full rounded-[1.5rem] border border-dashed border-emerald-300 bg-emerald-50 px-4 py-4 text-left transition active:scale-[0.99]"
+      >
+        <p className="text-base font-black text-emerald-900">
+          + Add custom food
+        </p>
+        <p className="mt-1 text-sm font-medium text-emerald-700">
+          Enter calories and macros manually for anything missing.
+        </p>
+      </button>
+
       {!canSearch && (
         <div className="space-y-4">
           {activeFilter === "packaged" && (
-  <BarcodeLookup onProductFound={setSelectedFood} />
-)}
+            <BarcodeLookup onProductFound={setSelectedFood} />
+          )}
+
           {recentFoods.length > 0 && (
             <FoodSection
               title="Recent"
@@ -216,91 +254,87 @@ function AddFoodScreen({ initialFoodId = null, onBack, onFoodAdded }) {
           )}
 
           <div className="rounded-[1.75rem] border border-dashed border-slate-300 bg-white p-5 text-center">
-            <p className="font-black text-slate-800">Search the full database</p>
+            <p className="font-black text-slate-800">
+              Search the full database
+            </p>
             <p className="mt-1 text-sm text-slate-500">
-            {activeFilter === "packaged"
-  ? "Type at least 3 letters to search local packaged foods and Open Food Facts."
-  : "Type at least 2 letters to search INDB foods."}
+              {activeFilter === "packaged"
+                ? "Type at least 3 letters to search local packaged foods, or use barcode lookup."
+                : "Type at least 2 letters to search INDB foods."}
             </p>
           </div>
         </div>
       )}
 
       {canSearch && (
-  <div className="space-y-4">
-    {activeFilter === "packaged" ? (
-      <>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-black uppercase tracking-wide text-slate-400">
-              Local packaged results
-            </p>
+        <div className="space-y-4">
+          {activeFilter === "packaged" ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-black uppercase tracking-wide text-slate-400">
+                  Local packaged results
+                </p>
 
-            <p className="text-xs font-bold text-slate-400">
-              {filteredFoods.length}
-              {filteredFoods.length === 40 ? "+" : ""} found
-            </p>
-          </div>
+                <p className="text-xs font-bold text-slate-400">
+                  {filteredFoods.length}
+                  {filteredFoods.length === 40 ? "+" : ""} found
+                </p>
+              </div>
 
-          {filteredFoods.length > 0 ? (
-            filteredFoods.map((food) => (
-              <FoodResultCard
-                key={food.id}
-                food={food}
-                onSelect={setSelectedFood}
-              />
-            ))
+              {filteredFoods.length > 0 ? (
+                filteredFoods.map((food) => (
+                  <FoodResultCard
+                    key={food.id}
+                    food={food}
+                    onSelect={setSelectedFood}
+                  />
+                ))
+              ) : (
+                <div className="rounded-[1.75rem] border border-dashed border-slate-300 bg-white p-5 text-center">
+                  <p className="font-black text-slate-800">
+                    No local packaged food found
+                  </p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Use barcode lookup from the Packaged screen, or add it as a
+                    custom food.
+                  </p>
+                </div>
+              )}
+            </div>
           ) : (
-            <div className="rounded-[1.75rem] border border-dashed border-slate-300 bg-white p-5 text-center">
-              <p className="font-black text-slate-800">
-                No local packaged food found
-              </p>
-              <p className="mt-1 text-sm text-slate-500">
-                Checking Open Food Facts online.
-              </p>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-black uppercase tracking-wide text-slate-400">
+                  Search results
+                </p>
+
+                <p className="text-xs font-bold text-slate-400">
+                  {filteredFoods.length}
+                  {filteredFoods.length === 40 ? "+" : ""} found
+                </p>
+              </div>
+
+              {filteredFoods.length > 0 ? (
+                filteredFoods.map((food) => (
+                  <FoodResultCard
+                    key={food.id}
+                    food={food}
+                    onSelect={setSelectedFood}
+                  />
+                ))
+              ) : (
+                <div className="rounded-[1.75rem] border border-dashed border-slate-300 bg-white p-6 text-center">
+                  <p className="font-black text-slate-800">No food found</p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Try another spelling, switch filter, or add it as a custom
+                    food.
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
-
-        <OpenFoodFactsSearch
-          query={search}
-          onSelectFood={setSelectedFood}
-        />
-      </>
-    ) : (
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-black uppercase tracking-wide text-slate-400">
-            Search results
-          </p>
-
-          <p className="text-xs font-bold text-slate-400">
-            {filteredFoods.length}
-            {filteredFoods.length === 40 ? "+" : ""} found
-          </p>
-        </div>
-
-        {filteredFoods.length > 0 ? (
-          filteredFoods.map((food) => (
-            <FoodResultCard
-              key={food.id}
-              food={food}
-              onSelect={setSelectedFood}
-            />
-          ))
-        ) : (
-          <div className="rounded-[1.75rem] border border-dashed border-slate-300 bg-white p-6 text-center">
-            <p className="font-black text-slate-800">No food found</p>
-            <p className="mt-1 text-sm text-slate-500">
-              Try another spelling, switch filter, or add it later as a custom
-              food.
-            </p>
-          </div>
-        )}
-      </div>
-    )}
-  </div>
-)}
+      )}
     </div>
   );
 }
@@ -383,7 +417,7 @@ function getPopularFoodsByKeywords(allFoods, keywords) {
 
   keywords.forEach((keyword) => {
     const match = allFoods.find((food) => {
-      const name = food.name.toLowerCase();
+      const name = food.name?.toLowerCase() || "";
       const aliases = food.aliases || [];
 
       return (
