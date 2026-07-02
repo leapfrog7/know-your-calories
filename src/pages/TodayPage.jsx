@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { foods } from "../data/foods";
+import { foods, getFoodById } from "../data/foods";
 import TodaySummaryCard from "../components/today/TodaySummaryCard";
 import QuickAddStrip from "../components/today/QuickAddStrip";
 import MealGroup from "../components/today/MealGroup";
@@ -40,10 +40,7 @@ function TodayPage({ onOpenAddFood }) {
       return foods.slice(0, 6);
     }
 
-    return ids
-      .map((foodId) => foods.find((food) => food.id === foodId))
-      .filter(Boolean)
-      .slice(0, 6);
+   return ids.map(getFoodById).filter(Boolean).slice(0, 6);
   }, [entries]);
 
   function handleDelete(entryId) {

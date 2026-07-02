@@ -7,7 +7,10 @@ function MealLogItem({ entry, onDelete }) {
         </p>
 
         <p className="mt-0.5 text-xs font-semibold text-slate-500">
-          {entry.quantity} × {entry.portionLabel}
+          {entry.servingText ||
+            `${entry.quantity} × ${entry.servingGrams || "-"}g · ${
+              entry.portionLabel
+            }`}
         </p>
 
         <p className="mt-1 text-xs text-slate-400">

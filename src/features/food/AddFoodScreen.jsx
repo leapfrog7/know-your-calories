@@ -1,59 +1,146 @@
 import { useMemo, useState } from "react";
-import { foods } from "../../data/foods";
-import { addEntryToDate } from "../meals/mealStorage";
-import { getAllDays } from "../meals/mealStorage";
+import { foods, getFoodById } from "../../data/foods";
+import { addEntryToDate, getAllDays } from "../meals/mealStorage";
 import { getFrequentFoodIds, getRecentFoodIds } from "../meals/mealHelpers";
 import FoodSearchInput from "./FoodSearchInput";
 import FoodResultCard from "./FoodResultCard";
 import SelectedFoodPanel from "./SelectedFoodPanel";
+import BarcodeLookup from "./BarcodeLookup";
+import OpenFoodFactsSearch from "./OpenFoodFactsSearch";
+
+const FILTERS = [
+  {
+    id: "all",
+    label: "All",
+    helper: "Indian + packaged",
+  },
+  {
+    id: "indian",
+    label: "Indian foods",
+    helper: "Meals & recipes",
+  },
+  {
+    id: "packaged",
+    label: "Packaged",
+    helper: "Snacks & labels",
+  },
+];
+
+const POPULAR_INDIAN_KEYWORDS = [
+  "roti",
+  "chapati",
+  "rice",
+  "dal",
+  "rajma",
+  "chole",
+  "paratha",
+  "curd",
+  "tea",
+  "poha",
+  "idli",
+  "samosa",
+];
+
+const POPULAR_PACKAGED_KEYWORDS = [
+  "biscuit",
+  "chips",
+  "bread",
+  "noodles",
+  "cola",
+];
 
 function AddFoodScreen({ initialFoodId = null, onBack, onFoodAdded }) {
-  const initialFood = initialFoodId
-    ? foods.find((food) => food.id === initialFoodId)
-    : null;
+  const initialFood = initialFoodId ? getFoodById(initialFoodId) : null;
 
   const [search, setSearch] = useState("");
+  const [activeFilter, setActiveFilter] = useState("all");
   const [selectedFood, setSelectedFood] = useState(initialFood || null);
 
   const days = getAllDays();
+  const query = search.trim().toLowerCase();
+ const canSearch =
+  activeFilter === "packaged" ? query.length >= 3 : query.length >= 2;
+
+  const sourceFilteredFoods = useMemo(() => {
+    if (activeFilter === "indian") {
+      return foods.filter((food) => food.source === "INDB");
+    }
+
+    if (activeFilter === "packaged") {
+      return foods.filter((food) => food.foodType === "packaged");
+    }
+
+    return foods;
+  }, [activeFilter]);
 
   const recentFoods = useMemo(() => {
     const recentIds = getRecentFoodIds(days, 8);
+
     return recentIds
-      .map((foodId) => foods.find((food) => food.id === foodId))
-      .filter(Boolean);
-  }, [days]);
+      .map(getFoodById)
+      .filter(Boolean)
+      .filter((food) => matchesActiveFilter(food, activeFilter));
+  }, [days, activeFilter]);
 
   const frequentFoods = useMemo(() => {
     const frequentIds = getFrequentFoodIds(days, 8);
-    return frequentIds
-      .map((foodId) => foods.find((food) => food.id === foodId))
-      .filter(Boolean);
-  }, [days]);
 
-  const commonFoods = foods.slice(0, 8);
+    return frequentIds
+      .map(getFoodById)
+      .filter(Boolean)
+      .filter((food) => matchesActiveFilter(food, activeFilter));
+  }, [days, activeFilter]);
+
+  const popularIndianFoods = useMemo(() => {
+    return getPopularFoodsByKeywords(foods, POPULAR_INDIAN_KEYWORDS)
+      .filter((food) => food.source === "INDB")
+      .slice(0, 10);
+  }, []);
+
+  const popularPackagedFoods = useMemo(() => {
+    return getPopularFoodsByKeywords(foods, POPULAR_PACKAGED_KEYWORDS)
+      .filter((food) => food.foodType === "packaged")
+      .slice(0, 8);
+  }, []);
 
   const filteredFoods = useMemo(() => {
-    const query = search.trim().toLowerCase();
-
-    if (!query) {
-      return foods;
+    if (!canSearch) {
+      return [];
     }
 
-    return foods.filter((food) => {
-      const nameMatch = food.name.toLowerCase().includes(query);
-      const categoryMatch = food.category.toLowerCase().includes(query);
-      const aliasMatch = food.aliases?.some((alias) =>
-        alias.toLowerCase().includes(query),
-      );
+    return sourceFilteredFoods
+      .filter((food) => {
+        const nameMatch = food.name.toLowerCase().includes(query);
+        const shortNameMatch = food.shortName?.toLowerCase().includes(query);
+        const categoryMatch = food.category.toLowerCase().includes(query);
+        const sourceMatch = food.source.toLowerCase().includes(query);
+        const cuisineMatch = food.cuisine?.toLowerCase().includes(query);
+        const foodTypeMatch = food.foodType?.toLowerCase().includes(query);
+        const aliasMatch = food.aliases?.some((alias) =>
+          alias.toLowerCase().includes(query)
+        );
 
-      return nameMatch || categoryMatch || aliasMatch;
-    });
-  }, [search]);
+        return (
+          nameMatch ||
+          shortNameMatch ||
+          categoryMatch ||
+          sourceMatch ||
+          cuisineMatch ||
+          foodTypeMatch ||
+          aliasMatch
+        );
+      })
+      .slice(0, 40);
+  }, [canSearch, query, sourceFilteredFoods]);
 
   function handleAdd(entry) {
     addEntryToDate(entry);
     onFoodAdded();
+  }
+
+  function handleFilterChange(filterId) {
+    setActiveFilter(filterId);
+    setSelectedFood(null);
   }
 
   if (selectedFood) {
@@ -82,15 +169,20 @@ function AddFoodScreen({ initialFoodId = null, onBack, onFoodAdded }) {
             Add Food
           </h2>
           <p className="text-sm text-slate-500">
-            Search or choose a common item
+            Search food or choose a common item
           </p>
         </div>
       </div>
 
       <FoodSearchInput value={search} onChange={setSearch} />
 
-      {!search.trim() && (
+      <FilterTabs activeFilter={activeFilter} onChange={handleFilterChange} />
+
+      {!canSearch && (
         <div className="space-y-4">
+          {activeFilter === "packaged" && (
+  <BarcodeLookup onProductFound={setSelectedFood} />
+)}
           {recentFoods.length > 0 && (
             <FoodSection
               title="Recent"
@@ -107,16 +199,49 @@ function AddFoodScreen({ initialFoodId = null, onBack, onFoodAdded }) {
             />
           )}
 
-          <FoodSection
-            title="Common foods"
-            foods={commonFoods}
-            onSelect={setSelectedFood}
-          />
+          {(activeFilter === "all" || activeFilter === "indian") && (
+            <FoodSection
+              title="Popular Indian foods"
+              foods={popularIndianFoods}
+              onSelect={setSelectedFood}
+            />
+          )}
+
+          {(activeFilter === "all" || activeFilter === "packaged") && (
+            <FoodSection
+              title="Common packaged foods"
+              foods={popularPackagedFoods}
+              onSelect={setSelectedFood}
+            />
+          )}
+
+          <div className="rounded-[1.75rem] border border-dashed border-slate-300 bg-white p-5 text-center">
+            <p className="font-black text-slate-800">Search the full database</p>
+            <p className="mt-1 text-sm text-slate-500">
+            {activeFilter === "packaged"
+  ? "Type at least 3 letters to search local packaged foods and Open Food Facts."
+  : "Type at least 2 letters to search INDB foods."}
+            </p>
+          </div>
         </div>
       )}
 
-      {search.trim() && (
+      {canSearch && (
+  <div className="space-y-4">
+    {activeFilter === "packaged" ? (
+      <>
         <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-black uppercase tracking-wide text-slate-400">
+              Local packaged results
+            </p>
+
+            <p className="text-xs font-bold text-slate-400">
+              {filteredFoods.length}
+              {filteredFoods.length === 40 ? "+" : ""} found
+            </p>
+          </div>
+
           {filteredFoods.length > 0 ? (
             filteredFoods.map((food) => (
               <FoodResultCard
@@ -126,25 +251,110 @@ function AddFoodScreen({ initialFoodId = null, onBack, onFoodAdded }) {
               />
             ))
           ) : (
-            <div className="rounded-[1.75rem] border border-dashed border-slate-300 bg-white p-6 text-center">
-              <p className="font-black text-slate-800">No food found</p>
+            <div className="rounded-[1.75rem] border border-dashed border-slate-300 bg-white p-5 text-center">
+              <p className="font-black text-slate-800">
+                No local packaged food found
+              </p>
               <p className="mt-1 text-sm text-slate-500">
-                Try another spelling or add it to the food database later.
+                Checking Open Food Facts online.
               </p>
             </div>
           )}
         </div>
-      )}
+
+        <OpenFoodFactsSearch
+          query={search}
+          onSelectFood={setSelectedFood}
+        />
+      </>
+    ) : (
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-black uppercase tracking-wide text-slate-400">
+            Search results
+          </p>
+
+          <p className="text-xs font-bold text-slate-400">
+            {filteredFoods.length}
+            {filteredFoods.length === 40 ? "+" : ""} found
+          </p>
+        </div>
+
+        {filteredFoods.length > 0 ? (
+          filteredFoods.map((food) => (
+            <FoodResultCard
+              key={food.id}
+              food={food}
+              onSelect={setSelectedFood}
+            />
+          ))
+        ) : (
+          <div className="rounded-[1.75rem] border border-dashed border-slate-300 bg-white p-6 text-center">
+            <p className="font-black text-slate-800">No food found</p>
+            <p className="mt-1 text-sm text-slate-500">
+              Try another spelling, switch filter, or add it later as a custom
+              food.
+            </p>
+          </div>
+        )}
+      </div>
+    )}
+  </div>
+)}
     </div>
   );
 }
 
+function FilterTabs({ activeFilter, onChange }) {
+  return (
+    <section className="rounded-[1.75rem] border border-slate-200/80 bg-white p-2 shadow-sm">
+      <div className="grid grid-cols-3 gap-2">
+        {FILTERS.map((filter) => {
+          const active = activeFilter === filter.id;
+
+          return (
+            <button
+              key={filter.id}
+              type="button"
+              onClick={() => onChange(filter.id)}
+              className={`rounded-2xl px-3 py-3 text-left transition active:scale-[0.99] ${
+                active
+                  ? "bg-slate-950 text-white"
+                  : "bg-slate-50 text-slate-600"
+              }`}
+            >
+              <p className="text-sm font-black">{filter.label}</p>
+              <p
+                className={`mt-0.5 hidden text-[11px] font-semibold sm:block ${
+                  active ? "text-slate-300" : "text-slate-400"
+                }`}
+              >
+                {filter.helper}
+              </p>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function FoodSection({ title, foods, onSelect }) {
+  if (!foods.length) {
+    return null;
+  }
+
   return (
     <section>
-      <h3 className="mb-3 text-sm font-black uppercase tracking-wide text-slate-400">
-        {title}
-      </h3>
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="text-sm font-black uppercase tracking-wide text-slate-400">
+          {title}
+        </h3>
+
+        <p className="text-xs font-bold text-slate-400">
+          {foods.length} item{foods.length === 1 ? "" : "s"}
+        </p>
+      </div>
 
       <div className="space-y-3">
         {foods.map((food) => (
@@ -153,6 +363,42 @@ function FoodSection({ title, foods, onSelect }) {
       </div>
     </section>
   );
+}
+
+function matchesActiveFilter(food, activeFilter) {
+  if (activeFilter === "indian") {
+    return food.source === "INDB";
+  }
+
+  if (activeFilter === "packaged") {
+    return food.foodType === "packaged";
+  }
+
+  return true;
+}
+
+function getPopularFoodsByKeywords(allFoods, keywords) {
+  const selected = [];
+  const usedIds = new Set();
+
+  keywords.forEach((keyword) => {
+    const match = allFoods.find((food) => {
+      const name = food.name.toLowerCase();
+      const aliases = food.aliases || [];
+
+      return (
+        name.includes(keyword) ||
+        aliases.some((alias) => alias.toLowerCase().includes(keyword))
+      );
+    });
+
+    if (match && !usedIds.has(match.id)) {
+      usedIds.add(match.id);
+      selected.push(match);
+    }
+  });
+
+  return selected;
 }
 
 export default AddFoodScreen;

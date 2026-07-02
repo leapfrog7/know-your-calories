@@ -6,26 +6,47 @@ import PortionSelector from "./PortionSelector";
 import QuantityStepper from "./QuantityStepper";
 
 function SelectedFoodPanel({ food, onChangeFood, onAdd }) {
-  const [portionIndex, setPortionIndex] = useState(1);
+  const [portionIndex, setPortionIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [meal, setMeal] = useState(() => getDefaultMealByTime());
 
-  const safePortionIndex = food.portions[portionIndex] ? portionIndex : 0;
-  const selectedPortion = food.portions[safePortionIndex];
+  const safePortionIndex = food.portions?.[portionIndex] ? portionIndex : 0;
+  const selectedPortion = food.portions?.[safePortionIndex] || {
+    label: "100g",
+    type: "grams",
+    grams: 100,
+  };
 
   const preview = useMemo(() => {
-    return calculateNutrition(food, selectedPortion.multiplier, quantity);
+    return calculateNutrition(food, selectedPortion, quantity);
   }, [food, selectedPortion, quantity]);
 
   function handleAdd() {
-    onAdd({
-      foodId: food.id,
-      foodName: food.name,
-      meal,
-      portionLabel: selectedPortion.label,
-      quantity,
-      ...preview,
-    });
+   onAdd({
+  foodId: food.id,
+  foodName: food.name,
+  source: food.source,
+  barcode: food.barcode || null,
+  brand: food.brand || null,
+  imageUrl: food.imageUrl || "",
+  meal,
+  portionLabel: selectedPortion.label,
+  portionType: selectedPortion.type,
+  servingGrams: selectedPortion.grams || null,
+  quantity,
+  servingText: preview.servingText,
+  productSnapshot: {
+    caloriesPer100g: food.caloriesPer100g,
+    proteinPer100g: food.proteinPer100g,
+    carbsPer100g: food.carbsPer100g,
+    fatPer100g: food.fatPer100g,
+    freeSugarPer100g: food.freeSugarPer100g,
+    source: food.source,
+    brand: food.brand || null,
+    barcode: food.barcode || null,
+  },
+  ...preview,
+});
   }
 
   return (
@@ -46,14 +67,27 @@ function SelectedFoodPanel({ food, onChangeFood, onAdd }) {
             </h2>
 
             <p className="mt-1 text-sm font-medium text-slate-500">
-              {food.defaultServingLabel}
+              Default: {food.defaultServing?.label || selectedPortion.label}
             </p>
+            {food.brand && (
+  <p className="mt-1 text-xs font-bold text-slate-400">
+    Brand: {food.brand}
+  </p>
+)}
           </div>
 
           <div className="shrink-0 rounded-full bg-amber-50 px-3 py-1 text-sm font-black text-amber-700">
-            {food.calories} kcal
+            {preview.calories} kcal
           </div>
         </div>
+
+        {food.imageUrl && (
+  <img
+    src={food.imageUrl}
+    alt={food.name}
+    className="mt-4 h-28 w-full rounded-2xl object-contain bg-slate-50"
+  />
+)}
 
         {food.notes && (
           <p className="mt-4 rounded-2xl bg-slate-50 p-3 text-xs leading-relaxed text-slate-500">
@@ -84,7 +118,7 @@ function SelectedFoodPanel({ food, onChangeFood, onAdd }) {
 
         <div className="mt-5">
           <PortionSelector
-            portions={food.portions}
+            portions={food.portions || []}
             selectedIndex={safePortionIndex}
             onChange={setPortionIndex}
           />
@@ -110,13 +144,24 @@ function SelectedFoodPanel({ food, onChangeFood, onAdd }) {
             Protein {preview.protein}g · Carbs {preview.carbs}g · Fat{" "}
             {preview.fat}g
           </p>
+
+          {preview.freeSugar > 0 && (
+            <p className="mt-1 text-xs font-semibold text-slate-400">
+              Free sugar {preview.freeSugar}g
+            </p>
+          )}
+
+          <p className="mt-2 text-xs font-semibold text-slate-500">
+            {preview.servingText}
+            {preview.grams ? ` · approx. ${preview.grams}g` : ""}
+          </p>
         </div>
       </section>
 
       <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200/80 bg-white/95 p-4 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] backdrop-blur-xl">
         <div className="mx-auto max-w-5xl">
           <PrimaryButton onClick={handleAdd}>
-            Add {quantity} × {selectedPortion.label} · {preview.calories} kcal
+            Add {preview.servingText} · {preview.calories} kcal
           </PrimaryButton>
         </div>
       </div>

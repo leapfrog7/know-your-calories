@@ -1,122 +1,20 @@
-export const foods = [
-  {
-    id: "roti",
-    name: "Roti / Chapati",
-    shortName: "Roti",
-    category: "Breads",
-    aliases: ["roti", "chapati", "phulka"],
-    defaultUnit: "piece",
-    defaultServingLabel: "1 medium roti",
-    servingWeightGrams: 35,
-    calories: 110,
-    protein: 3.5,
-    carbs: 22,
-    fat: 1,
-    portions: [
-      { label: "Small", multiplier: 0.75 },
-      { label: "Medium", multiplier: 1 },
-      { label: "Large", multiplier: 1.35 },
-    ],
-    notes: "Approximation for plain wheat roti without ghee.",
-  },
-  {
-    id: "dal-tadka",
-    name: "Dal Tadka",
-    shortName: "Dal",
-    category: "Dal",
-    aliases: ["dal", "yellow dal", "arhar dal", "toor dal", "tadka dal"],
-    defaultUnit: "katori",
-    defaultServingLabel: "1 medium katori",
-    servingWeightGrams: 150,
-    calories: 170,
-    protein: 8,
-    carbs: 22,
-    fat: 6,
-    portions: [
-      { label: "Small katori", multiplier: 0.7 },
-      { label: "Medium katori", multiplier: 1 },
-      { label: "Large bowl", multiplier: 1.45 },
-    ],
-    notes: "Assumes moderate tadka with oil or ghee.",
-  },
-  {
-    id: "plain-rice",
-    name: "Plain Cooked Rice",
-    shortName: "Rice",
-    category: "Rice",
-    aliases: ["rice", "chawal", "plain rice", "cooked rice"],
-    defaultUnit: "bowl",
-    defaultServingLabel: "1 medium bowl",
-    servingWeightGrams: 150,
-    calories: 195,
-    protein: 4,
-    carbs: 42,
-    fat: 0.5,
-    portions: [
-      { label: "Small bowl", multiplier: 0.7 },
-      { label: "Medium bowl", multiplier: 1 },
-      { label: "Large bowl", multiplier: 1.5 },
-    ],
-    notes: "Approximation for cooked white rice.",
-  },
-  {
-    id: "aloo-paratha",
-    name: "Aloo Paratha",
-    shortName: "Paratha",
-    category: "Breads",
-    aliases: ["aloo paratha", "potato paratha", "paratha"],
-    defaultUnit: "piece",
-    defaultServingLabel: "1 medium paratha",
-    servingWeightGrams: 120,
-    calories: 280,
-    protein: 7,
-    carbs: 42,
-    fat: 10,
-    portions: [
-      { label: "Small", multiplier: 0.8 },
-      { label: "Medium", multiplier: 1 },
-      { label: "Large", multiplier: 1.35 },
-    ],
-    notes: "Calories vary significantly depending on oil or ghee.",
-  },
-  {
-    id: "tea-sugar",
-    name: "Tea with Sugar",
-    shortName: "Tea",
-    category: "Drinks",
-    aliases: ["chai", "tea", "milk tea"],
-    defaultUnit: "cup",
-    defaultServingLabel: "1 regular cup",
-    servingWeightGrams: 120,
-    calories: 90,
-    protein: 2,
-    carbs: 14,
-    fat: 3,
-    portions: [
-      { label: "Small cup", multiplier: 0.75 },
-      { label: "Regular cup", multiplier: 1 },
-      { label: "Large cup", multiplier: 1.4 },
-    ],
-    notes: "Assumes milk tea with sugar.",
-  },
-  {
-    id: "curd",
-    name: "Curd / Dahi",
-    shortName: "Curd",
-    category: "Dairy",
-    aliases: ["curd", "dahi", "yogurt"],
-    defaultUnit: "katori",
-    defaultServingLabel: "1 medium katori",
-    servingWeightGrams: 150,
-    calories: 95,
-    protein: 5,
-    carbs: 7,
-    fat: 5,
-    portions: [
-      { label: "Small katori", multiplier: 0.7 },
-      { label: "Medium katori", multiplier: 1 },
-      { label: "Large bowl", multiplier: 1.4 },
-    ],
-    notes: "Approximation for plain curd.",
-  },
-];
+import { indbFoods } from "./indbFoods";
+import { packagedFoods } from "./packagedFoods";
+
+export const foods = [...indbFoods, ...packagedFoods];
+
+export function getFoodById(foodId) {
+  return foods.find((food) => food.id === foodId) || null;
+}
+
+export function getFoodsBySource(source) {
+  return foods.filter((food) => food.source === source);
+}
+
+export function getFoodsByCategory(category) {
+  return foods.filter((food) => food.category === category);
+}
+
+export function getFoodCategories() {
+  return [...new Set(foods.map((food) => food.category))].sort();
+}

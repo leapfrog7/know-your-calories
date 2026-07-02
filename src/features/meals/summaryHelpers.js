@@ -1,4 +1,4 @@
-import { foods } from "../../data/foods";
+import { getFoodById } from "../../data/foods";
 import { calculateTotals, roundTotals } from "./nutrition";
 
 function getDateKey(date) {
@@ -96,7 +96,8 @@ function getMostLoggedFoods(loggedDays, limit = 5) {
       counts[entry.foodId] = {
         foodId: entry.foodId,
         count: (counts[entry.foodId]?.count || 0) + 1,
-        calories: (counts[entry.foodId]?.calories || 0) + entry.calories,
+       calories:
+  (counts[entry.foodId]?.calories || 0) + (Number(entry.calories) || 0),
       };
     });
   });
@@ -105,12 +106,12 @@ function getMostLoggedFoods(loggedDays, limit = 5) {
     .sort((a, b) => b.count - a.count)
     .slice(0, limit)
     .map((item) => {
-      const food = foods.find((foodItem) => foodItem.id === item.foodId);
+     const food = getFoodById(item.foodId);
 
-      return {
-        ...item,
-        name: food?.shortName || food?.name || item.foodId,
-      };
+return {
+  ...item,
+  name: food?.shortName || food?.name || item.foodId,
+};
     });
 }
 
