@@ -59,8 +59,8 @@ function AddFoodScreen({ initialFoodId = null, onBack, onFoodAdded }) {
   const [customRefreshKey, setCustomRefreshKey] = useState(0);
 
   const allFoods = useMemo(() => getAllFoods(), [customRefreshKey]);
+  const days = useMemo(() => getAllDays(), [customRefreshKey]);
 
-  const days = getAllDays();
   const query = search.trim().toLowerCase();
 
   const canSearch =
@@ -115,28 +115,20 @@ function AddFoodScreen({ initialFoodId = null, onBack, onFoodAdded }) {
 
     return sourceFilteredFoods
       .filter((food) => {
-        const nameMatch = food.name?.toLowerCase().includes(query);
-        const shortNameMatch = food.shortName?.toLowerCase().includes(query);
-        const categoryMatch = food.category?.toLowerCase().includes(query);
-        const sourceMatch = food.source?.toLowerCase().includes(query);
-        const cuisineMatch = food.cuisine?.toLowerCase().includes(query);
-        const foodTypeMatch = food.foodType?.toLowerCase().includes(query);
-        const brandMatch = food.brand?.toLowerCase().includes(query);
-        const barcodeMatch = food.barcode?.toLowerCase().includes(query);
-        const aliasMatch = food.aliases?.some((alias) =>
-          alias.toLowerCase().includes(query),
-        );
+        const searchableValues = [
+          food.name,
+          food.shortName,
+          food.category,
+          food.source,
+          food.cuisine,
+          food.foodType,
+          food.brand,
+          food.barcode,
+          ...(Array.isArray(food.aliases) ? food.aliases : []),
+        ];
 
-        return (
-          nameMatch ||
-          shortNameMatch ||
-          categoryMatch ||
-          sourceMatch ||
-          cuisineMatch ||
-          foodTypeMatch ||
-          brandMatch ||
-          barcodeMatch ||
-          aliasMatch
+        return searchableValues.some((value) =>
+          getTextValue(value).toLowerCase().includes(query),
         );
       })
       .slice(0, 40);
@@ -155,6 +147,13 @@ function AddFoodScreen({ initialFoodId = null, onBack, onFoodAdded }) {
   function handleCustomFoodSaved(food) {
     setCustomRefreshKey((key) => key + 1);
     setShowCustomForm(false);
+    setSelectedFood(food);
+  }
+
+  function handleQuickAddFood(food) {
+    // Safe behaviour for now:
+    // '+' opens the existing quantity panel instead of directly adding.
+    // Direct add should be implemented only after every food has a reliable default quantity.
     setSelectedFood(food);
   }
 
@@ -179,46 +178,105 @@ function AddFoodScreen({ initialFoodId = null, onBack, onFoodAdded }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
+      {/* Back row */}
+      <div className="flex justify-end">
         <button
           type="button"
           onClick={onBack}
-          className="rounded-2xl bg-white px-4 py-3 text-sm font-black text-slate-700 shadow-sm active:scale-[0.98]"
+          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-sm font-bold text-slate-700 shadow-sm transition active:scale-[0.98]"
         >
-          Back
+          <span className="text-base leading-none">←</span>
+          <span>Back</span>
         </button>
-
-        <div>
-          <h2 className="text-xl font-black tracking-tight text-slate-950">
-            Add Food
-          </h2>
-          <p className="text-sm text-slate-500">
-            Search food, scan barcode, or add custom food
-          </p>
-        </div>
       </div>
 
-      <FoodSearchInput value={search} onChange={setSearch} />
+      {/* Main search area */}
+      <section className="rounded-[1.75rem] border border-slate-200/80 bg-white p-3 shadow-sm">
+        <div className="mb-3 px-3 py-1">
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700">
+            Search for food items
+          </p>
 
-      <FilterTabs activeFilter={activeFilter} onChange={handleFilterChange} />
+          <p className="mt-1 text-sm leading-5 text-slate-500">
+            Search meals, recipes, packaged items, or use a saved food.
+          </p>
+        </div>
 
-      <button
-        type="button"
-        onClick={() => setShowCustomForm(true)}
-        className="w-full rounded-[1.5rem] border border-dashed border-emerald-300 bg-emerald-50 px-4 py-4 text-left transition active:scale-[0.99]"
-      >
-        <p className="text-base font-black text-emerald-900">
-          + Add custom food
-        </p>
-        <p className="mt-1 text-sm font-medium text-emerald-700">
-          Enter calories and macros manually for anything missing.
-        </p>
-      </button>
+        <FoodSearchInput value={search} onChange={setSearch} />
 
+        <div className="mt-3">
+          <FilterTabs
+            activeFilter={activeFilter}
+            onChange={handleFilterChange}
+          />
+        </div>
+      </section>
+
+      {/* Search results */}
+      {canSearch && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between px-1">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                {activeFilter === "packaged"
+                  ? "Packaged results"
+                  : "Search results"}
+              </p>
+
+              <p className="mt-0.5 text-xs font-semibold text-slate-500">
+                Tap an item to adjust quantity, or use + to continue quickly.
+              </p>
+            </div>
+
+            <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-slate-500 shadow-sm ring-1 ring-slate-200">
+              {filteredFoods.length}
+              {filteredFoods.length === 40 ? "+" : ""} found
+            </span>
+          </div>
+
+          {filteredFoods.length > 0 ? (
+            <div className="space-y-3">
+              {filteredFoods.map((food) => (
+                <FoodResultCard
+                  key={food.id}
+                  food={food}
+                  onSelect={setSelectedFood}
+                  onQuickAdd={handleQuickAddFood}
+                />
+              ))}
+            </div>
+          ) : (
+            <EmptySearchState
+              activeFilter={activeFilter}
+              onAddCustom={() => setShowCustomForm(true)}
+            />
+          )}
+        </section>
+      )}
+
+      {/* Suggested/default state */}
       {!canSearch && (
-        <div className="space-y-4">
+        <section className="space-y-4">
           {activeFilter === "packaged" && (
-            <BarcodeLookup onProductFound={setSelectedFood} />
+            <div className="rounded-[1.75rem] border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-black text-slate-900">
+                    Packaged food
+                  </p>
+
+                  <p className="mt-1 text-sm leading-5 text-slate-500">
+                    Search by name or use barcode lookup for branded products.
+                  </p>
+                </div>
+
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-slate-50 text-lg">
+                  📦
+                </span>
+              </div>
+
+              <BarcodeLookup onProductFound={setSelectedFood} />
+            </div>
           )}
 
           {recentFoods.length > 0 && (
@@ -226,6 +284,7 @@ function AddFoodScreen({ initialFoodId = null, onBack, onFoodAdded }) {
               title="Recent"
               foods={recentFoods}
               onSelect={setSelectedFood}
+              onQuickAdd={handleQuickAddFood}
             />
           )}
 
@@ -234,6 +293,7 @@ function AddFoodScreen({ initialFoodId = null, onBack, onFoodAdded }) {
               title="Frequent"
               foods={frequentFoods}
               onSelect={setSelectedFood}
+              onQuickAdd={handleQuickAddFood}
             />
           )}
 
@@ -242,6 +302,7 @@ function AddFoodScreen({ initialFoodId = null, onBack, onFoodAdded }) {
               title="Popular Indian foods"
               foods={popularIndianFoods}
               onSelect={setSelectedFood}
+              onQuickAdd={handleQuickAddFood}
             />
           )}
 
@@ -250,90 +311,30 @@ function AddFoodScreen({ initialFoodId = null, onBack, onFoodAdded }) {
               title="Common packaged foods"
               foods={popularPackagedFoods}
               onSelect={setSelectedFood}
+              onQuickAdd={handleQuickAddFood}
             />
           )}
 
-          <div className="rounded-[1.75rem] border border-dashed border-slate-300 bg-white p-5 text-center">
-            <p className="font-black text-slate-800">
-              Search the full database
-            </p>
-            <p className="mt-1 text-sm text-slate-500">
-              {activeFilter === "packaged"
-                ? "Type at least 3 letters to search local packaged foods, or use barcode lookup."
-                : "Type at least 2 letters to search INDB foods."}
-            </p>
-          </div>
-        </div>
-      )}
+          <button
+            type="button"
+            onClick={() => setShowCustomForm(true)}
+            className="flex w-full items-center justify-between gap-3 rounded-[1.5rem] border border-slate-200 bg-white px-4 py-3.5 text-left shadow-sm transition active:scale-[0.99]"
+          >
+            <div className="min-w-0">
+              <p className="text-sm font-black text-slate-900">
+                Can’t find your food?
+              </p>
 
-      {canSearch && (
-        <div className="space-y-4">
-          {activeFilter === "packaged" ? (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-black uppercase tracking-wide text-slate-400">
-                  Local packaged results
-                </p>
-
-                <p className="text-xs font-bold text-slate-400">
-                  {filteredFoods.length}
-                  {filteredFoods.length === 40 ? "+" : ""} found
-                </p>
-              </div>
-
-              {filteredFoods.length > 0 ? (
-                filteredFoods.map((food) => (
-                  <FoodResultCard
-                    key={food.id}
-                    food={food}
-                    onSelect={setSelectedFood}
-                  />
-                ))
-              ) : (
-                <div className="rounded-[1.75rem] border border-dashed border-slate-300 bg-white p-5 text-center">
-                  <p className="font-black text-slate-800">
-                    No local packaged food found
-                  </p>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Use barcode lookup from the Packaged screen, or add it as a
-                    custom food.
-                  </p>
-                </div>
-              )}
+              <p className="mt-0.5 truncate text-xs font-semibold text-slate-500">
+                Add calories and macros manually
+              </p>
             </div>
-          ) : (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-black uppercase tracking-wide text-slate-400">
-                  Search results
-                </p>
 
-                <p className="text-xs font-bold text-slate-400">
-                  {filteredFoods.length}
-                  {filteredFoods.length === 40 ? "+" : ""} found
-                </p>
-              </div>
-
-              {filteredFoods.length > 0 ? (
-                filteredFoods.map((food) => (
-                  <FoodResultCard
-                    key={food.id}
-                    food={food}
-                    onSelect={setSelectedFood}
-                  />
-                ))
-              ) : (
-                <div className="rounded-[1.75rem] border border-dashed border-slate-300 bg-white p-6 text-center">
-                  <p className="font-black text-slate-800">No food found</p>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Try another spelling, switch filter, or add it as a custom
-                    food.
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-lg font-black text-emerald-700">
+              +
+            </span>
+          </button>
+        </section>
       )}
     </div>
   );
@@ -341,8 +342,8 @@ function AddFoodScreen({ initialFoodId = null, onBack, onFoodAdded }) {
 
 function FilterTabs({ activeFilter, onChange }) {
   return (
-    <section className="rounded-[1.75rem] border border-slate-200/80 bg-white p-2 shadow-sm">
-      <div className="grid grid-cols-3 gap-2">
+    <div className="rounded-[1.5rem] bg-slate-50 p-1.5">
+      <div className="grid grid-cols-3 gap-1.5">
         {FILTERS.map((filter) => {
           const active = activeFilter === filter.id;
 
@@ -351,13 +352,14 @@ function FilterTabs({ activeFilter, onChange }) {
               key={filter.id}
               type="button"
               onClick={() => onChange(filter.id)}
-              className={`rounded-2xl px-3 py-3 text-left transition active:scale-[0.99] ${
+              className={`rounded-2xl px-3 py-2.5 text-left transition active:scale-[0.99] ${
                 active
-                  ? "bg-slate-950 text-white"
-                  : "bg-slate-50 text-slate-600"
+                  ? "bg-slate-950 text-white shadow-sm"
+                  : "bg-transparent text-slate-600"
               }`}
             >
               <p className="text-sm font-black">{filter.label}</p>
+
               <p
                 className={`mt-0.5 hidden text-[11px] font-semibold sm:block ${
                   active ? "text-slate-300" : "text-slate-400"
@@ -369,18 +371,18 @@ function FilterTabs({ activeFilter, onChange }) {
           );
         })}
       </div>
-    </section>
+    </div>
   );
 }
 
-function FoodSection({ title, foods, onSelect }) {
+function FoodSection({ title, foods, onSelect, onQuickAdd }) {
   if (!foods.length) {
     return null;
   }
 
   return (
     <section>
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3 flex items-center justify-between px-1">
         <h3 className="text-sm font-black uppercase tracking-wide text-slate-400">
           {title}
         </h3>
@@ -392,10 +394,41 @@ function FoodSection({ title, foods, onSelect }) {
 
       <div className="space-y-3">
         {foods.map((food) => (
-          <FoodResultCard key={food.id} food={food} onSelect={onSelect} />
+          <FoodResultCard
+            key={food.id}
+            food={food}
+            onSelect={onSelect}
+            onQuickAdd={onQuickAdd}
+          />
         ))}
       </div>
     </section>
+  );
+}
+
+function EmptySearchState({ activeFilter, onAddCustom }) {
+  return (
+    <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5 text-center shadow-sm">
+      <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-50 text-lg">
+        🔍
+      </div>
+
+      <p className="font-black text-slate-800">
+        {activeFilter === "packaged" ? "No packaged food found" : "No food found"}
+      </p>
+
+      <p className="mx-auto mt-1 max-w-xs text-sm leading-5 text-slate-500">
+        Try another spelling, switch the filter, or add it manually.
+      </p>
+
+      <button
+        type="button"
+        onClick={onAddCustom}
+        className="mt-4 rounded-full bg-emerald-600 px-4 py-2 text-sm font-black text-white shadow-sm active:scale-[0.98]"
+      >
+        Add custom food
+      </button>
+    </div>
   );
 }
 
@@ -417,12 +450,14 @@ function getPopularFoodsByKeywords(allFoods, keywords) {
 
   keywords.forEach((keyword) => {
     const match = allFoods.find((food) => {
-      const name = food.name?.toLowerCase() || "";
-      const aliases = food.aliases || [];
+      const name = getTextValue(food.name).toLowerCase();
+      const aliases = Array.isArray(food.aliases) ? food.aliases : [];
 
       return (
         name.includes(keyword) ||
-        aliases.some((alias) => alias.toLowerCase().includes(keyword))
+        aliases.some((alias) =>
+          getTextValue(alias).toLowerCase().includes(keyword),
+        )
       );
     });
 
@@ -433,6 +468,26 @@ function getPopularFoodsByKeywords(allFoods, keywords) {
   });
 
   return selected;
+}
+
+function getTextValue(value) {
+  if (!value) {
+    return "";
+  }
+
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (typeof value === "number") {
+    return String(value);
+  }
+
+  if (typeof value === "object") {
+    return value.label || value.name || value.type || "";
+  }
+
+  return "";
 }
 
 export default AddFoodScreen;

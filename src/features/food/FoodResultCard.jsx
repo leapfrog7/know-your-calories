@@ -1,66 +1,167 @@
-import { calculateNutrition } from "../meals/nutrition";
+function FoodResultCard({ food, onSelect, onQuickAdd }) {
+  const foodName = getTextValue(food.name) || "Food item";
+  const category = getTextValue(food.category);
+  const servingText = getServingText(food);
+  const calories = getCaloriesText(food);
+  const protein = getMacroValue(food.protein ?? food.proteinPer100g);
+  const carbs = getMacroValue(food.carbs ?? food.carbsPer100g);
+  const fat = getMacroValue(food.fat ?? food.fatPer100g);
+  const source = getTextValue(food.source) || "Food database";
 
-function FoodResultCard({ food, onSelect }) {
-  const defaultPortion = food.portions?.[0] || {
-    label: "100g",
-    type: "grams",
-    grams: 100,
-  };
+  function handleCardKeyDown(event) {
+    if (event.key === "Enter") {
+      onSelect(food);
+    }
+  }
 
-  const nutrition = calculateNutrition(food, defaultPortion, 1);
+  function handleQuickAdd(event) {
+    event.stopPropagation();
+
+    if (typeof onQuickAdd === "function") {
+      onQuickAdd(food);
+      return;
+    }
+
+    onSelect(food);
+  }
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => onSelect(food)}
-      className="w-full rounded-[1.5rem] border border-slate-200/80 bg-white p-4 text-left shadow-sm transition active:scale-[0.99]"
+      onKeyDown={handleCardKeyDown}
+      className="w-full cursor-pointer rounded-[1.5rem] border border-slate-200/80 bg-white p-4 text-left shadow-sm transition active:scale-[0.99]"
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="truncate text-base font-black text-slate-950">
-              {food.name}
-            </p>
+            <h3 className="truncate text-base font-black tracking-tight text-slate-950">
+              {foodName}
+            </h3>
 
-            <SourceBadge food={food} />
+            {category && (
+              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-emerald-700">
+                {category}
+              </span>
+            )}
           </div>
 
-          <p className="mt-1 text-xs font-semibold text-slate-400">
-            {food.category} · {defaultPortion.label}
+          <p className="mt-1 text-xs font-semibold text-slate-500">
+            {servingText}
+          </p>
+
+          <p className="mt-3 text-sm font-semibold text-slate-700">
+            P {protein}g · C {carbs}g · F {fat}g
+          </p>
+
+          <p className="mt-2 text-xs font-medium text-slate-400">
+            {source}
+            {food.caloriesPer100g
+              ? ` · per 100g: ${Math.round(food.caloriesPer100g)} kcal`
+              : ""}
           </p>
         </div>
 
-        <div className="shrink-0 rounded-full bg-amber-50 px-3 py-1 text-sm font-black text-amber-700">
-          {nutrition.calories} kcal
+        <div className="flex shrink-0 flex-col items-end gap-3">
+          <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-700">
+            {calories}
+          </span>
+
+          <button
+            type="button"
+            onClick={handleQuickAdd}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-950 text-xl font-black leading-none text-white shadow-sm transition active:scale-[0.95]"
+            aria-label={`Quick add ${foodName}`}
+          >
+            +
+          </button>
         </div>
       </div>
-
-      <p className="mt-3 text-xs font-medium text-slate-500">
-        P {nutrition.protein}g · C {nutrition.carbs}g · F {nutrition.fat}g
-      </p>
-
-      <p className="mt-2 text-[11px] font-semibold text-slate-400">
-        {food.source} · {food.foodType} · {food.servingUnitGroup || "serving"} ·
-        per 100g: {food.caloriesPer100g} kcal
-      </p>
-    </button>
+    </div>
   );
 }
 
-function SourceBadge({ food }) {
-  const isPackaged = food.foodType === "packaged";
+function getTextValue(value) {
+  if (!value) {
+    return "";
+  }
 
-  return (
-    <span
-      className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ${
-        isPackaged
-          ? "bg-indigo-50 text-indigo-700"
-          : "bg-emerald-50 text-emerald-700"
-      }`}
-    >
-      {isPackaged ? "Packaged" : "Indian"}
-    </span>
-  );
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (typeof value === "number") {
+    return String(value);
+  }
+
+  if (typeof value === "object") {
+    return value.label || value.name || value.type || "";
+  }
+
+  return "";
+}
+
+function getServingText(food) {
+  const servingLabel = getTextValue(food.servingLabel);
+  const defaultServing = getTextValue(food.defaultServing);
+
+  if (servingLabel) {
+    return servingLabel;
+  }
+
+  if (defaultServing) {
+    return defaultServing;
+  }
+
+  if (food.defaultServingGram) {
+    return `${food.defaultServingGram}g default serving`;
+  }
+
+  if (food.defaultGrams) {
+    return `${food.defaultGrams}g default serving`;
+  }
+
+  if (food.caloriesPer100g) {
+    return "Per 100g";
+  }
+
+  return "Per serving";
+}
+
+function getCaloriesText(food) {
+  const calories =
+    food.calories ??
+    food.kcal ??
+    food.energyKcal ??
+    food.caloriesPerServing ??
+    food.caloriesPer100g;
+
+  if (typeof calories === "number") {
+    return `${Math.round(calories)} kcal`;
+  }
+
+  const textCalories = getTextValue(calories);
+
+  if (textCalories) {
+    return `${textCalories} kcal`;
+  }
+
+  return "— kcal";
+}
+
+function getMacroValue(value) {
+  if (typeof value === "number") {
+    return Number.isInteger(value) ? value : Number(value.toFixed(1));
+  }
+
+  const parsed = Number(value);
+
+  if (Number.isFinite(parsed)) {
+    return Number.isInteger(parsed) ? parsed : Number(parsed.toFixed(1));
+  }
+
+  return 0;
 }
 
 export default FoodResultCard;

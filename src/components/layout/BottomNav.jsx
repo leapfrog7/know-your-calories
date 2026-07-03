@@ -1,41 +1,56 @@
 function BottomNav({ activePage, onGoToday, onGoSummary, onGoHistory }) {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200/80 bg-white/95 px-4 pb-4 pt-3 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] backdrop-blur-xl">
-      <div className="mx-auto grid max-w-5xl grid-cols-3 gap-2">
-        <NavButton
-          label="Today"
-          active={activePage === "today"}
-          onClick={onGoToday}
-        />
+    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200/80 bg-white px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] backdrop-blur-xl">
+      <div className="mx-auto max-w-6xl bg-slate-100 rounded-lg">
+        <div className="grid grid-cols-3 gap-2 rounded-lg slate-100 p-1.5">
+          <NavButton
+            label="Today"
+            emoji="♨️"
+            active={activePage === "today"}
+            onClick={onGoToday}
+          />
 
-        <NavButton
-          label="Summary"
-          active={activePage === "summary"}
-          onClick={onGoSummary}
-        />
+          <NavButton
+            label="Summary"
+            emoji="📊"
+            active={activePage === "summary"}
+            onClick={onGoSummary}
+          />
 
-        <NavButton
-          label="History"
-          active={activePage === "history"}
-          onClick={onGoHistory}
-        />
+          <NavButton
+            label="History"
+            emoji="🕒"
+            active={activePage === "history"}
+            onClick={onGoHistory}
+          />
+        </div>
       </div>
     </nav>
   );
 }
 
-function NavButton({ label, active, onClick }) {
+function NavButton({ label, emoji, active, onClick }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-2xl px-3 py-3 text-sm font-bold transition active:scale-[0.98] ${
+      aria-current={active ? "page" : undefined}
+      className={`flex min-h-12 flex-col items-center justify-center gap-1 rounded-lg px-1 py-2 text-xs font-black transition active:scale-[0.97] ${
         active
-          ? "bg-emerald-600 text-white shadow-sm"
-          : "bg-slate-100 text-slate-600"
+          ? "bg-white text-emerald-700 shadow-sm ring-1 ring-slate-200/70"
+          : "text-slate-500 active:bg-white/70 active:text-slate-700"
       }`}
     >
-      {label}
+      <span
+        className={`text-lg leading-none ${
+          active ? "scale-110" : "grayscale opacity-70"
+        }`}
+        aria-hidden="true"
+      >
+        {emoji}
+      </span>
+
+      <span className="leading-none">{label}</span>
     </button>
   );
 }

@@ -1,6 +1,6 @@
 function FoodSearchInput({ value, onChange }) {
   return (
-    <div className="sticky top-[65px] z-20 -mx-4 border-b border-slate-200/70 bg-[#f7f7f2]/95 px-4 pb-3 pt-2 backdrop-blur-xl">
+    <div className="0 bg-white px-2 py-2 backdrop-blur-xl">
       <label className="sr-only" htmlFor="food-search">
         Search food
       </label>
