@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/know-your-calories/sw.js', { scope: '/know-your-calories/' })})}
