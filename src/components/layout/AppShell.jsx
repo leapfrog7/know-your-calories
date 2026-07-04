@@ -6,8 +6,9 @@ function AppShell({
   children,
   activePage,
   onGoToday,
-  onGoSummary, 
+  onGoSummary,
   onGoHistory,
+  onGoSettings,
   onOpenAddFood,
 }) {
   const showBottomNav = activePage !== "add-food";
@@ -17,9 +18,11 @@ function AppShell({
       ? "Nutrition Summary"
       : activePage === "history"
         ? "Food History"
-        : activePage === "add-food"
-          ? "Add Food"
-          : "Daily Food Log";
+        : activePage === "settings"
+          ? "Settings"
+          : activePage === "add-food"
+            ? "Add Food"
+            : "Daily Food Log";
 
   return (
     <main className="min-h-screen bg-[#f7f7f2] text-slate-950">
@@ -27,7 +30,7 @@ function AppShell({
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-2">
           <AppLogo subtitle={headerSubtitle} />
 
-          {activePage !== "add-food" && (
+          {activePage !== "add-food" && activePage !== "settings" && (
             <button
               type="button"
               onClick={onOpenAddFood}
@@ -49,6 +52,7 @@ function AppShell({
           onGoToday={onGoToday}
           onGoSummary={onGoSummary}
           onGoHistory={onGoHistory}
+          onGoSettings={onGoSettings}
         />
       )}
     </main>
@@ -61,6 +65,7 @@ AppShell.propTypes = {
   onGoToday: PropTypes.func.isRequired,
   onGoSummary: PropTypes.func.isRequired,
   onGoHistory: PropTypes.func.isRequired,
+  onGoSettings: PropTypes.func.isRequired,
   onOpenAddFood: PropTypes.func.isRequired,
 };
 

@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { getSortedDayLogs } from "../features/meals/mealStorage";
 import { calculateTotals, roundTotals } from "../features/meals/nutrition";
 import { formatDisplayDate } from "../features/meals/mealHelpers";
+// import DataBackupPanel from "../components/settings/DataBackupPanel";
 
 function HistoryPage() {
   const dayLogs = useMemo(() => getSortedDayLogs(), []);
@@ -189,7 +190,9 @@ function SmallStat({
 }) {
   return (
     <div className={`rounded-2xl p-3 ${className}`}>
-      <p className={`text-[10px] font-black uppercase tracking-wide ${labelClassName}`}>
+      <p
+        className={`text-[10px] font-black uppercase tracking-wide ${labelClassName}`}
+      >
         {label}
       </p>
 

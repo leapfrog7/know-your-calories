@@ -3,6 +3,7 @@ import AppShell from "./components/layout/AppShell";
 import TodayPage from "./pages/TodayPage";
 import HistoryPage from "./pages/HistoryPage";
 import SummaryPage from "./pages/SummaryPage";
+import SettingsPage from "./pages/SettingsPage";
 import AddFoodScreen from "./features/food/AddFoodScreen";
 
 function App() {
@@ -29,12 +30,18 @@ function App() {
     setActivePage("history");
   }
 
+  function goSettings() {
+    setQuickFoodId(null);
+    setActivePage("settings");
+  }
+
   return (
     <AppShell
       activePage={activePage}
       onGoToday={goToday}
       onGoSummary={goSummary}
       onGoHistory={goHistory}
+      onGoSettings={goSettings}
       onOpenAddFood={() => openAddFood()}
     >
       {activePage === "today" && <TodayPage onOpenAddFood={openAddFood} />}
@@ -42,6 +49,8 @@ function App() {
       {activePage === "summary" && <SummaryPage />}
 
       {activePage === "history" && <HistoryPage />}
+
+      {activePage === "settings" && <SettingsPage />}
 
       {activePage === "add-food" && (
         <AddFoodScreen

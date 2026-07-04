@@ -355,7 +355,7 @@ function FilterTabs({ activeFilter, onChange }) {
               className={`rounded-2xl px-3 py-2.5 text-left transition active:scale-[0.99] ${
                 active
                   ? "bg-slate-950 text-white shadow-sm"
-                  : "bg-transparent text-slate-600"
+                  : "bg-slate-200 text-slate-600"
               }`}
             >
               <p className="text-sm font-black">{filter.label}</p>
@@ -414,7 +414,9 @@ function EmptySearchState({ activeFilter, onAddCustom }) {
       </div>
 
       <p className="font-black text-slate-800">
-        {activeFilter === "packaged" ? "No packaged food found" : "No food found"}
+        {activeFilter === "packaged"
+          ? "No packaged food found"
+          : "No food found"}
       </p>
 
       <p className="mx-auto mt-1 max-w-xs text-sm leading-5 text-slate-500">
