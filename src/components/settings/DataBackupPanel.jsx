@@ -7,7 +7,10 @@ import {
   mergeImportedDays,
   replaceAllDays,
 } from "../../features/meals/mealStorage";
-
+import {
+  getFavoriteFoodIds,
+  saveFavoriteFoodIds,
+} from "../../features/favorites/favoriteStorage";
 function DataBackupPanel() {
   const fileInputRef = useRef(null);
 
@@ -49,6 +52,7 @@ function DataBackupPanel() {
     if (!pendingBackup) return;
 
     replaceAllDays(pendingBackup.data.days);
+    saveFavoriteFoodIds(pendingBackup.data.favorites || []);
 
     setPendingBackup(null);
     setPendingFileName("");
@@ -61,6 +65,15 @@ function DataBackupPanel() {
     if (!pendingBackup) return;
 
     mergeImportedDays(pendingBackup.data.days);
+
+    const mergedFavoriteIds = [
+      ...new Set([
+        ...getFavoriteFoodIds(),
+        ...(pendingBackup.data.favorites || []),
+      ]),
+    ];
+
+    saveFavoriteFoodIds(mergedFavoriteIds);
 
     setPendingBackup(null);
     setPendingFileName("");

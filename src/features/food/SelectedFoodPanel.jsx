@@ -1,7 +1,12 @@
 import { useMemo, useState } from "react";
 import PrimaryButton from "../../components/ui/PrimaryButton";
+import FavoriteButton from "../../components/ui/FavoriteButton";
 import { calculateNutrition } from "../meals/nutrition";
 import { getDefaultMealByTime, MEAL_ORDER } from "../meals/mealHelpers";
+import {
+  isFavoriteFood,
+  toggleFavoriteFood,
+} from "../favorites/favoriteStorage";
 import PortionSelector from "./PortionSelector";
 import QuantityStepper from "./QuantityStepper";
 
@@ -9,6 +14,9 @@ function SelectedFoodPanel({ food, onChangeFood, onAdd }) {
   const [portionIndex, setPortionIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [meal, setMeal] = useState(() => getDefaultMealByTime());
+  const [, setFavoriteVersion] = useState(0);
+
+  const favorite = isFavoriteFood(food.id);
 
   const safePortionIndex = food.portions?.[portionIndex] ? portionIndex : 0;
 
@@ -21,6 +29,15 @@ function SelectedFoodPanel({ food, onChangeFood, onAdd }) {
   const preview = useMemo(() => {
     return calculateNutrition(food, selectedPortion, quantity);
   }, [food, selectedPortion, quantity]);
+
+  function handleFavoriteClick(event) {
+    event.stopPropagation();
+
+    toggleFavoriteFood(food.id);
+    setFavoriteVersion((version) => version + 1);
+
+    window.dispatchEvent(new Event("kyc:favorites-changed"));
+  }
 
   function handleAdd() {
     onAdd({
@@ -52,19 +69,19 @@ function SelectedFoodPanel({ food, onChangeFood, onAdd }) {
 
   return (
     <div className="space-y-4 pb-28">
-     <div className="flex w-full justify-end">
-  <button
-    type="button"
-    onClick={onChangeFood}
-    className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-black text-slate-700 shadow-sm transition active:scale-[0.98] active:bg-slate-50"
-    aria-label="Change selected food"
-  >
-    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
-      ←
-    </span>
-    <span>Change 📝</span>
-  </button>
-</div>
+      <div className="flex w-full justify-end">
+        <button
+          type="button"
+          onClick={onChangeFood}
+          className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-black text-slate-700 shadow-sm transition active:scale-[0.98] active:bg-slate-50"
+          aria-label="Change selected food"
+        >
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
+            ←
+          </span>
+          <span>Change 📝</span>
+        </button>
+      </div>
 
       <section className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white shadow-sm">
         <div className="p-5">
@@ -91,20 +108,18 @@ function SelectedFoodPanel({ food, onChangeFood, onAdd }) {
               </div>
             </div>
 
-            <div className="shrink-0">
-              {/* {food.imageUrl ? (
-                <img
-                  src={food.imageUrl}
-                  alt={food.name}
-                  className="h-20 w-20 rounded-3xl border border-slate-100 bg-slate-50 object-contain p-1.5"
-                />
-              ) : (
-                <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-emerald-50 text-2xl">
-                  🍽️
-                </div>
-              )} */}
+            <div className="flex shrink-0 flex-col items-end gap-2">
+              <FavoriteButton
+                active={favorite}
+                onClick={handleFavoriteClick}
+                label={
+                  favorite
+                    ? `Remove ${food.name} from favorites`
+                    : `Add ${food.name} to favorites`
+                }
+              />
 
-              <div className="mt-2 rounded-2xl bg-amber-50 px-3 py-1.5 text-center">
+              <div className="rounded-2xl bg-amber-50 px-3 py-1.5 text-center">
                 <p className="text-sm font-black leading-none text-amber-700">
                   {preview.calories}
                 </p>
@@ -196,32 +211,13 @@ function SelectedFoodPanel({ food, onChangeFood, onAdd }) {
               </div>
 
               <div className="mt-4 grid grid-cols-3 gap-2">
-                <div className="rounded-2xl bg-emerald-400/15 px-3 py-2 ring-1 ring-emerald-300/15">
-                  <p className="text-[10px] font-black uppercase tracking-wide text-emerald-200">
-                    Protein
-                  </p>
-                  <p className="mt-1 text-sm font-black text-emerald-50">
-                    {preview.protein}g
-                  </p>
-                </div>
-
-                <div className="rounded-2xl bg-sky-400/15 px-3 py-2 ring-1 ring-sky-300/15">
-                  <p className="text-[10px] font-black uppercase tracking-wide text-sky-200">
-                    Carbs
-                  </p>
-                  <p className="mt-1 text-sm font-black text-sky-50">
-                    {preview.carbs}g
-                  </p>
-                </div>
-
-                <div className="rounded-2xl bg-amber-400/15 px-3 py-2 ring-1 ring-amber-300/15">
-                  <p className="text-[10px] font-black uppercase tracking-wide text-amber-200">
-                    Fat
-                  </p>
-                  <p className="mt-1 text-sm font-black text-amber-50">
-                    {preview.fat}g
-                  </p>
-                </div>
+                <MacroPreview
+                  label="Protein"
+                  value={preview.protein}
+                  color="emerald"
+                />
+                <MacroPreview label="Carbs" value={preview.carbs} color="sky" />
+                <MacroPreview label="Fat" value={preview.fat} color="amber" />
               </div>
 
               {preview.freeSugar > 0 && (
@@ -231,7 +227,9 @@ function SelectedFoodPanel({ food, onChangeFood, onAdd }) {
               )}
 
               <p className="mt-3 text-xs font-semibold leading-relaxed text-slate-500">
-                {preview.grams ? `Approx. ${preview.grams}g total quantity` : ""}
+                {preview.grams
+                  ? `Approx. ${preview.grams}g total quantity`
+                  : ""}
               </p>
             </div>
           </div>
@@ -249,4 +247,39 @@ function SelectedFoodPanel({ food, onChangeFood, onAdd }) {
   );
 }
 
+function MacroPreview({ label, value, color }) {
+  const classes = {
+    emerald: {
+      box: "bg-emerald-400/15 ring-emerald-300/15",
+      label: "text-emerald-200",
+      value: "text-emerald-50",
+    },
+    sky: {
+      box: "bg-sky-400/15 ring-sky-300/15",
+      label: "text-sky-200",
+      value: "text-sky-50",
+    },
+    amber: {
+      box: "bg-amber-400/15 ring-amber-300/15",
+      label: "text-amber-200",
+      value: "text-amber-50",
+    },
+  };
+
+  const selectedClasses = classes[color] || classes.emerald;
+
+  return (
+    <div className={`rounded-2xl px-3 py-2 ring-1 ${selectedClasses.box}`}>
+      <p
+        className={`text-[10px] font-black uppercase tracking-wide ${selectedClasses.label}`}
+      >
+        {label}
+      </p>
+
+      <p className={`mt-1 text-sm font-black ${selectedClasses.value}`}>
+        {value}g
+      </p>
+    </div>
+  );
+}
 export default SelectedFoodPanel;

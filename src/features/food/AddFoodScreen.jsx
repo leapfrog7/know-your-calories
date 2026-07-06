@@ -1,7 +1,11 @@
 import { useMemo, useState } from "react";
 import { getAllFoods, getFoodById } from "../../data/foods";
 import CustomFoodForm from "./CustomFoodForm";
-import { addEntryToDate, getAllDays } from "../meals/mealStorage";
+import {
+  addEntryToDate,
+  getAllDays,
+  updateEntryInDate,
+} from "../meals/mealStorage";
 import { getFrequentFoodIds, getRecentFoodIds } from "../meals/mealHelpers";
 import FoodSearchInput from "./FoodSearchInput";
 import FoodResultCard from "./FoodResultCard";
@@ -49,7 +53,12 @@ const POPULAR_PACKAGED_KEYWORDS = [
   "cola",
 ];
 
-function AddFoodScreen({ initialFoodId = null, onBack, onFoodAdded }) {
+function AddFoodScreen({
+  initialFoodId = null,
+  editingEntry = null,
+  onBack,
+  onFoodAdded,
+}) {
   const initialFood = initialFoodId ? getFoodById(initialFoodId) : null;
 
   const [search, setSearch] = useState("");
@@ -57,6 +66,8 @@ function AddFoodScreen({ initialFoodId = null, onBack, onFoodAdded }) {
   const [selectedFood, setSelectedFood] = useState(initialFood || null);
   const [showCustomForm, setShowCustomForm] = useState(false);
   const [customRefreshKey, setCustomRefreshKey] = useState(0);
+
+  const isEditing = Boolean(editingEntry);
 
   const allFoods = useMemo(() => getAllFoods(), [customRefreshKey]);
   const days = useMemo(() => getAllDays(), [customRefreshKey]);
@@ -134,14 +145,22 @@ function AddFoodScreen({ initialFoodId = null, onBack, onFoodAdded }) {
       .slice(0, 40);
   }, [canSearch, query, sourceFilteredFoods]);
 
-  function handleAdd(entry) {
-    addEntryToDate(entry);
+  function handleAddOrUpdate(entry) {
+    if (editingEntry) {
+      updateEntryInDate(editingEntry.id, entry, editingEntry.date);
+    } else {
+      addEntryToDate(entry);
+    }
+
     onFoodAdded();
   }
 
   function handleFilterChange(filterId) {
     setActiveFilter(filterId);
-    setSelectedFood(null);
+
+    if (!isEditing) {
+      setSelectedFood(null);
+    }
   }
 
   function handleCustomFoodSaved(food) {
@@ -151,10 +170,16 @@ function AddFoodScreen({ initialFoodId = null, onBack, onFoodAdded }) {
   }
 
   function handleQuickAddFood(food) {
-    // Safe behaviour for now:
-    // '+' opens the existing quantity panel instead of directly adding.
-    // Direct add should be implemented only after every food has a reliable default quantity.
     setSelectedFood(food);
+  }
+
+  function handleChangeFood() {
+    if (isEditing) {
+      onBack();
+      return;
+    }
+
+    setSelectedFood(null);
   }
 
   if (showCustomForm) {
@@ -170,15 +195,15 @@ function AddFoodScreen({ initialFoodId = null, onBack, onFoodAdded }) {
     return (
       <SelectedFoodPanel
         food={selectedFood}
-        onChangeFood={() => setSelectedFood(null)}
-        onAdd={handleAdd}
+        editingEntry={editingEntry}
+        onChangeFood={handleChangeFood}
+        onAdd={handleAddOrUpdate}
       />
     );
   }
 
   return (
     <div className="space-y-4">
-      {/* Back row */}
       <div className="flex justify-end">
         <button
           type="button"
@@ -190,15 +215,16 @@ function AddFoodScreen({ initialFoodId = null, onBack, onFoodAdded }) {
         </button>
       </div>
 
-      {/* Main search area */}
       <section className="rounded-[1.75rem] border border-slate-200/80 bg-white p-3 shadow-sm">
         <div className="mb-3 px-3 py-1">
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700">
-            Search for food items
+            {isEditing ? "Edit food item" : "Search for food items"}
           </p>
 
           <p className="mt-1 text-sm leading-5 text-slate-500">
-            Search meals, recipes, packaged items, or use a saved food.
+            {isEditing
+              ? "Adjust the meal, portion or quantity and update the logged item."
+              : "Search meals, recipes, packaged items, or use a saved food."}
           </p>
         </div>
 
@@ -212,7 +238,6 @@ function AddFoodScreen({ initialFoodId = null, onBack, onFoodAdded }) {
         </div>
       </section>
 
-      {/* Search results */}
       {canSearch && (
         <section className="space-y-3">
           <div className="flex items-center justify-between px-1">
@@ -254,7 +279,6 @@ function AddFoodScreen({ initialFoodId = null, onBack, onFoodAdded }) {
         </section>
       )}
 
-      {/* Suggested/default state */}
       {!canSearch && (
         <section className="space-y-4">
           {activeFilter === "packaged" && (
@@ -315,25 +339,27 @@ function AddFoodScreen({ initialFoodId = null, onBack, onFoodAdded }) {
             />
           )}
 
-          <button
-            type="button"
-            onClick={() => setShowCustomForm(true)}
-            className="flex w-full items-center justify-between gap-3 rounded-[1.5rem] border border-slate-200 bg-white px-4 py-3.5 text-left shadow-sm transition active:scale-[0.99]"
-          >
-            <div className="min-w-0">
-              <p className="text-sm font-black text-slate-900">
-                Can’t find your food?
-              </p>
+          {!isEditing && (
+            <button
+              type="button"
+              onClick={() => setShowCustomForm(true)}
+              className="flex w-full items-center justify-between gap-3 rounded-[1.5rem] border border-slate-200 bg-white px-4 py-3.5 text-left shadow-sm transition active:scale-[0.99]"
+            >
+              <div className="min-w-0">
+                <p className="text-sm font-black text-slate-900">
+                  Can’t find your food?
+                </p>
 
-              <p className="mt-0.5 truncate text-xs font-semibold text-slate-500">
-                Add calories and macros manually
-              </p>
-            </div>
+                <p className="mt-0.5 truncate text-xs font-semibold text-slate-500">
+                  Add calories and macros manually
+                </p>
+              </div>
 
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-lg font-black text-emerald-700">
-              +
-            </span>
-          </button>
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-lg font-black text-emerald-700">
+                +
+              </span>
+            </button>
+          )}
         </section>
       )}
     </div>

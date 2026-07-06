@@ -52,6 +52,10 @@ function TodayPage({ onOpenAddFood }) {
     setDayLog(updatedDayLog);
   }
 
+  function handleEdit(entry) {
+    onOpenAddFood(entry.foodId, entry);
+  }
+
   return (
     <div className="space-y-5">
       <TodaySummaryCard totals={totals} targets={targets} />
@@ -117,6 +121,7 @@ function TodayPage({ onOpenAddFood }) {
                 title={meal}
                 entries={groupedEntries[meal] || []}
                 onDelete={handleDelete}
+                onEdit={handleEdit}
               />
             ))}
           </div>

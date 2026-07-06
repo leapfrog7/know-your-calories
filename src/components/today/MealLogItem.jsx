@@ -1,25 +1,4 @@
-function TrashIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      className="h-6 w-6"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M3 6h18" />
-      <path d="M8 6V4h8v2" />
-      <path d="M6.5 6l1 14h9l1-14" />
-      <path d="M10 11v5" />
-      <path d="M14 11v5" />
-    </svg>
-  );
-}
-
-function MealLogItem({ entry, onDelete }) {
+function MealLogItem({ entry, onDelete, onEdit }) {
   const servingText =
     entry.servingText ||
     `${entry.quantity} × ${entry.servingGrams || "-"}g${
@@ -62,14 +41,25 @@ function MealLogItem({ entry, onDelete }) {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => onDelete(entry.id)}
-          className="flex h-9 w-9 items-center justify-center rounded-md px-1 bg-slate-200 text-rose-400 transition active:bg-red-50 active:text-red-600"
-          aria-label={`Remove ${entry.foodName}`}
-        >
-          <TrashIcon />
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => onEdit(entry)}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-sm text-slate-500 transition active:bg-slate-200 active:text-slate-700"
+            aria-label={`Edit ${entry.foodName}`}
+          >
+            ✎
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onDelete(entry.id)}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-rose-50 text-sm text-rose-500 transition active:bg-rose-100 active:text-rose-700"
+            aria-label={`Remove ${entry.foodName}`}
+          >
+            🗑️
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -76,7 +76,6 @@ export function getMealStorage() {
 
   try {
     const parsed = JSON.parse(raw);
-
     const normalizedDays = normalizeDays(parsed.days);
 
     return {
@@ -163,6 +162,37 @@ export function addEntryToDate(entry, dateKey = getTodayKey()) {
   const updatedDayLog = {
     ...dayLog,
     entries: [...(dayLog.entries || []), nextEntry],
+  };
+
+  return saveDayLog(dateKey, updatedDayLog);
+}
+
+export function updateEntryInDate(
+  entryId,
+  updatedEntry,
+  dateKey = getTodayKey(),
+) {
+  const dayLog = getDayLog(dateKey);
+  const now = new Date().toISOString();
+
+  const updatedEntries = (dayLog.entries || []).map((entry) => {
+    if (entry.id !== entryId) {
+      return entry;
+    }
+
+    return {
+      ...entry,
+      ...updatedEntry,
+      id: entry.id,
+      date: entry.date || dateKey,
+      createdAt: entry.createdAt || now,
+      updatedAt: now,
+    };
+  });
+
+  const updatedDayLog = {
+    ...dayLog,
+    entries: updatedEntries,
   };
 
   return saveDayLog(dateKey, updatedDayLog);

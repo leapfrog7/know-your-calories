@@ -9,29 +9,35 @@ import AddFoodScreen from "./features/food/AddFoodScreen";
 function App() {
   const [activePage, setActivePage] = useState("today");
   const [quickFoodId, setQuickFoodId] = useState(null);
+  const [editingEntry, setEditingEntry] = useState(null);
 
-  function openAddFood(foodId = null) {
+  function openAddFood(foodId = null, entry = null) {
     setQuickFoodId(foodId);
+    setEditingEntry(entry);
     setActivePage("add-food");
   }
 
   function goToday() {
     setQuickFoodId(null);
+    setEditingEntry(null);
     setActivePage("today");
   }
 
   function goSummary() {
     setQuickFoodId(null);
+    setEditingEntry(null);
     setActivePage("summary");
   }
 
   function goHistory() {
     setQuickFoodId(null);
+    setEditingEntry(null);
     setActivePage("history");
   }
 
   function goSettings() {
     setQuickFoodId(null);
+    setEditingEntry(null);
     setActivePage("settings");
   }
 
@@ -55,6 +61,7 @@ function App() {
       {activePage === "add-food" && (
         <AddFoodScreen
           initialFoodId={quickFoodId}
+          editingEntry={editingEntry}
           onBack={goToday}
           onFoodAdded={goToday}
         />
