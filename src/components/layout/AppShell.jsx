@@ -6,6 +6,7 @@ function AppShell({
   children,
   activePage,
   onGoToday,
+  onGoPlan,
   onGoSummary,
   onGoHistory,
   onGoSettings,
@@ -14,15 +15,22 @@ function AppShell({
   const showBottomNav = activePage !== "add-food";
 
   const headerSubtitle =
-    activePage === "summary"
-      ? "Nutrition Summary"
-      : activePage === "history"
-        ? "Food History"
-        : activePage === "settings"
-          ? "Settings"
-          : activePage === "add-food"
-            ? "Add Food"
-            : "Daily Food Log";
+    activePage === "plan"
+      ? "Meal Planning"
+      : activePage === "summary"
+        ? "Nutrition Summary"
+        : activePage === "history"
+          ? "Food History"
+          : activePage === "settings"
+            ? "Settings"
+            : activePage === "add-food"
+              ? "Add Food"
+              : "Daily Food Log";
+
+  const showAddButton =
+    activePage !== "add-food" &&
+    activePage !== "settings" &&
+    activePage !== "plan";
 
   return (
     <main className="min-h-screen bg-[#f7f7f2] text-slate-950">
@@ -30,7 +38,7 @@ function AppShell({
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-2">
           <AppLogo subtitle={headerSubtitle} />
 
-          {activePage !== "add-food" && activePage !== "settings" && (
+          {showAddButton && (
             <button
               type="button"
               onClick={onOpenAddFood}
@@ -50,6 +58,7 @@ function AppShell({
         <BottomNav
           activePage={activePage}
           onGoToday={onGoToday}
+          onGoPlan={onGoPlan}
           onGoSummary={onGoSummary}
           onGoHistory={onGoHistory}
           onGoSettings={onGoSettings}
@@ -63,6 +72,7 @@ AppShell.propTypes = {
   children: PropTypes.node.isRequired,
   activePage: PropTypes.string.isRequired,
   onGoToday: PropTypes.func.isRequired,
+  onGoPlan: PropTypes.func.isRequired,
   onGoSummary: PropTypes.func.isRequired,
   onGoHistory: PropTypes.func.isRequired,
   onGoSettings: PropTypes.func.isRequired,

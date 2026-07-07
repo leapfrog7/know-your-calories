@@ -10,12 +10,24 @@ import {
 import PortionSelector from "./PortionSelector";
 import QuantityStepper from "./QuantityStepper";
 
-function SelectedFoodPanel({ food, onChangeFood, onAdd }) {
-  const [portionIndex, setPortionIndex] = useState(0);
-  const [quantity, setQuantity] = useState(1);
-  const [meal, setMeal] = useState(() => getDefaultMealByTime());
+function SelectedFoodPanel({
+  food,
+  editingEntry = null,
+  mode = "today",
+  onChangeFood,
+  onAdd,
+}) {
+  const initialPortionIndex = getInitialPortionIndex(food, editingEntry);
+
+  const [portionIndex, setPortionIndex] = useState(initialPortionIndex);
+  const [quantity, setQuantity] = useState(editingEntry?.quantity || 1);
+  const [meal, setMeal] = useState(
+    () => editingEntry?.meal || getDefaultMealByTime(),
+  );
   const [, setFavoriteVersion] = useState(0);
 
+  const isEditing = Boolean(editingEntry);
+  const isPlanMode = mode === "plan";
   const favorite = isFavoriteFood(food.id);
 
   const safePortionIndex = food.portions?.[portionIndex] ? portionIndex : 0;
@@ -74,12 +86,14 @@ function SelectedFoodPanel({ food, onChangeFood, onAdd }) {
           type="button"
           onClick={onChangeFood}
           className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-black text-slate-700 shadow-sm transition active:scale-[0.98] active:bg-slate-50"
-          aria-label="Change selected food"
+          aria-label={isEditing ? "Cancel editing" : "Change selected food"}
         >
           <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
             ←
           </span>
-          <span>Change 📝</span>
+         <span>
+  {isEditing ? "Cancel edit" : isPlanMode ? "Back to plan" : "Change 📝"}
+</span>
         </button>
       </div>
 
@@ -87,9 +101,9 @@ function SelectedFoodPanel({ food, onChangeFood, onAdd }) {
         <div className="p-5">
           <div className="flex items-start gap-4">
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-600">
-                Selected food
-              </p>
+             <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-600">
+  {isPlanMode ? "Planning food" : isEditing ? "Editing food" : "Selected food"}
+</p>
 
               <h2 className="mt-1 line-clamp-2 text-2xl font-black tracking-tight text-slate-950">
                 {food.name}
@@ -99,6 +113,12 @@ function SelectedFoodPanel({ food, onChangeFood, onAdd }) {
                 <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
                   Default: {food.defaultServing?.label || selectedPortion.label}
                 </span>
+
+                {isEditing && (
+                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
+                    Update mode
+                  </span>
+                )}
 
                 {food.brand && (
                   <span className="rounded-full bg-sky-50 px-3 py-1 text-xs font-black text-sky-700">
@@ -238,13 +258,47 @@ function SelectedFoodPanel({ food, onChangeFood, onAdd }) {
 
       <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200/80 bg-white/95 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] backdrop-blur-xl">
         <div className="mx-auto max-w-5xl">
-          <PrimaryButton onClick={handleAdd}>
-            Add {preview.servingText} · {preview.calories} kcal
-          </PrimaryButton>
+        <PrimaryButton onClick={handleAdd}>
+  {isEditing
+    ? isPlanMode
+      ? "Update plan"
+      : "Update"
+    : isPlanMode
+      ? "Add to plan"
+      : "Add"}{" "}
+  {preview.servingText} · {preview.calories} kcal
+</PrimaryButton>
         </div>
       </div>
     </div>
   );
+}
+
+function getInitialPortionIndex(food, editingEntry) {
+  if (!editingEntry || !Array.isArray(food.portions)) {
+    return 0;
+  }
+
+  const index = food.portions.findIndex((portion) => {
+    const sameLabel =
+      portion.label &&
+      editingEntry.portionLabel &&
+      portion.label === editingEntry.portionLabel;
+
+    const sameType =
+      portion.type &&
+      editingEntry.portionType &&
+      portion.type === editingEntry.portionType;
+
+    const sameGrams =
+      Number(portion.grams || 0) > 0 &&
+      Number(editingEntry.servingGrams || 0) > 0 &&
+      Number(portion.grams) === Number(editingEntry.servingGrams);
+
+    return sameLabel || (sameType && sameGrams);
+  });
+
+  return index >= 0 ? index : 0;
 }
 
 function MacroPreview({ label, value, color }) {
@@ -282,4 +336,5 @@ function MacroPreview({ label, value, color }) {
     </div>
   );
 }
+
 export default SelectedFoodPanel;

@@ -14,16 +14,7 @@ export function getTodayKey(date = new Date()) {
   return `${year}-${month}-${day}`;
 }
 
-export function formatDisplayDate(dateKey) {
-  const [year, month, day] = dateKey.split("-").map(Number);
-  const date = new Date(year, month - 1, day);
 
-  return date.toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
 
 export function getDefaultMealByTime(date = new Date()) {
   const hour = date.getHours();
@@ -89,4 +80,61 @@ export function getRecentFoodIds(days = {}, limit = 8) {
   });
 
   return recentIds.slice(0, limit);
+}
+
+export function addDaysToDateKey(dateKey, daysToAdd) {
+  const date = parseDateKey(dateKey);
+  date.setDate(date.getDate() + daysToAdd);
+  return formatDateKey(date);
+}
+
+export function getTomorrowKey() {
+  return addDaysToDateKey(getTodayKey(), 1);
+}
+
+export function formatDateKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+export function parseDateKey(dateKey) {
+  if (!dateKey || typeof dateKey !== "string") {
+    return new Date();
+  }
+
+  const [year, month, day] = dateKey.split("-").map(Number);
+
+  if (!year || !month || !day) {
+    return new Date();
+  }
+
+  return new Date(year, month - 1, day);
+}
+
+export function formatDisplayDate(dateKey) {
+  const date = parseDateKey(dateKey);
+
+  return date.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+export function getRelativeDateLabel(dateKey) {
+  const todayKey = getTodayKey();
+  const tomorrowKey = getTomorrowKey();
+
+  if (dateKey === todayKey) {
+    return "Today";
+  }
+
+  if (dateKey === tomorrowKey) {
+    return "Tomorrow";
+  }
+
+  return formatDisplayDate(dateKey);
 }

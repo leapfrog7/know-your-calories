@@ -56,6 +56,8 @@ const POPULAR_PACKAGED_KEYWORDS = [
 function AddFoodScreen({
   initialFoodId = null,
   editingEntry = null,
+  targetDateKey = null,
+  mode = "today",
   onBack,
   onFoodAdded,
 }) {
@@ -145,15 +147,17 @@ function AddFoodScreen({
       .slice(0, 40);
   }, [canSearch, query, sourceFilteredFoods]);
 
-  function handleAddOrUpdate(entry) {
-    if (editingEntry) {
-      updateEntryInDate(editingEntry.id, entry, editingEntry.date);
-    } else {
-      addEntryToDate(entry);
-    }
+function handleAddOrUpdate(entry) {
+  const dateKey = editingEntry?.date || targetDateKey || undefined;
 
-    onFoodAdded();
+  if (editingEntry) {
+    updateEntryInDate(editingEntry.id, entry, dateKey);
+  } else {
+    addEntryToDate(entry, dateKey);
   }
+
+  onFoodAdded();
+}
 
   function handleFilterChange(filterId) {
     setActiveFilter(filterId);
@@ -193,12 +197,14 @@ function AddFoodScreen({
 
   if (selectedFood) {
     return (
-      <SelectedFoodPanel
-        food={selectedFood}
-        editingEntry={editingEntry}
-        onChangeFood={handleChangeFood}
-        onAdd={handleAddOrUpdate}
-      />
+      
+       <SelectedFoodPanel
+  food={selectedFood}
+  editingEntry={editingEntry}
+  mode={mode}
+  onChangeFood={handleChangeFood}
+  onAdd={handleAddOrUpdate}
+/>
     );
   }
 
@@ -226,6 +232,24 @@ function AddFoodScreen({
               ? "Adjust the meal, portion or quantity and update the logged item."
               : "Search meals, recipes, packaged items, or use a saved food."}
           </p>
+
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700">
+  {mode === "plan"
+    ? editingEntry
+      ? "Edit planned food"
+      : "Add planned food"
+    : editingEntry
+      ? "Edit food item"
+      : "Search for food items"}
+</p>
+
+<p className="mt-1 text-sm leading-5 text-slate-500">
+  {mode === "plan"
+    ? "Choose foods for a future meal plan."
+    : editingEntry
+      ? "Adjust the meal, portion or quantity and update the logged item."
+      : "Search meals, recipes, packaged items, or use a saved food."}
+</p>
         </div>
 
         <FoodSearchInput value={search} onChange={setSearch} />

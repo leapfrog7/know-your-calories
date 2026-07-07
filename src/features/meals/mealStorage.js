@@ -236,6 +236,15 @@ export function replaceAllDays(importedDays) {
   return normalizedDays;
 }
 
+export function clearEntriesForDate(dateKey = getTodayKey()) {
+  const updatedDayLog = {
+    date: dateKey,
+    entries: [],
+  };
+
+  return saveDayLog(dateKey, updatedDayLog);
+}
+
 export function mergeImportedDays(importedDays) {
   const storage = getMealStorage();
   const existingDays = normalizeDays(storage.days);
