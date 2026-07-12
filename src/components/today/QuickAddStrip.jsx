@@ -89,15 +89,15 @@ function QuickAddStrip({ foods, onSelectFood }) {
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-3 gap-1.5 rounded-2xl bg-slate-100 p-1">
+      <div className="mt-4 grid grid-cols-3 gap-1 rounded-xl bg-slate-100 p-0.5">
         <ShelfTab
-          label="Quick ⚡️"
+          label="Quick⚡️"
           active={mode === "quick"}
           onClick={() => setMode("quick")}
         />
 
         <ShelfTab
-          label="Favorites 💗"
+          label="Fav 💗"
           active={mode === "favorites"}
           onClick={() => setMode("favorites")}
         />
@@ -138,7 +138,7 @@ function ShelfTab({ label, active, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-xl px-2 py-2.5 text-xs font-black transition active:scale-[0.98] sm:text-sm ${
+      className={`rounded-xl py-2 text-xs font-black transition active:scale-[0.98] md:text-sm ${
         active
           ? "bg-slate-800 text-white shadow-sm"
           : "text-slate-400 active:bg-white/70"
