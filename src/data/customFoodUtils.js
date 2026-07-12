@@ -44,6 +44,10 @@ function saveStoredCustomFoods(foods) {
   localStorage.setItem(CUSTOM_FOODS_KEY, JSON.stringify(foods));
 }
 
+function dispatchCustomFoodsUpdated() {
+  window.dispatchEvent(new Event("kyc:custom-foods-updated"));
+}
+
 function buildGramPortions(defaultGrams = 100) {
   const portions = [
     { label: "50g", type: "grams", grams: 50, displayUnit: "g" },
@@ -86,15 +90,7 @@ function buildServingPortion(formData) {
   };
 }
 
-export function getCustomFoods() {
-  return getStoredCustomFoods();
-}
-
-export function getCustomFoodById(foodId) {
-  return getStoredCustomFoods().find((food) => food.id === foodId) || null;
-}
-
-export function saveCustomFood(formData) {
+function buildCustomFoodFromForm(formData, existingFood = null) {
   const name = cleanText(formData.name);
   const entryMode = formData.entryMode || "per100g";
 
@@ -108,16 +104,16 @@ export function saveCustomFood(formData) {
     throw new Error("Calories must be greater than zero.");
   }
 
-  const id = createId();
+  const id = existingFood?.id || createId();
+  const now = new Date().toISOString();
   const category = cleanText(formData.category) || "Custom Foods";
   const brand = cleanText(formData.brand);
-
-  let food;
 
   if (entryMode === "serving") {
     const portion = buildServingPortion(formData);
 
-    food = {
+    return {
+      ...(existingFood || {}),
       id,
       source: "Custom",
       sourceFoodCode: id,
@@ -159,60 +155,102 @@ export function saveCustomFood(formData) {
       portions: [portion],
 
       dataQuality: "user-entered",
-      createdAt: new Date().toISOString(),
+      createdAt: existingFood?.createdAt || now,
+      updatedAt: existingFood ? now : undefined,
       notes: "User-created food. Nutrition entered per serving.",
     };
-  } else {
-    const defaultGrams = toNumber(formData.defaultGrams) || 100;
-
-    food = {
-      id,
-      source: "Custom",
-      sourceFoodCode: id,
-      barcode: "",
-      brand,
-      name: brand ? `${name} · ${brand}` : name,
-      shortName: name,
-      category,
-      foodType: "custom",
-      cuisine: "Custom",
-      aliases: buildAliases(name, brand),
-
-      caloriesPer100g: toNumber(formData.calories),
-      energyKjPer100g: 0,
-      proteinPer100g: toNumber(formData.protein),
-      carbsPer100g: toNumber(formData.carbs),
-      fatPer100g: toNumber(formData.fat),
-      freeSugarPer100g: toNumber(formData.freeSugar),
-
-      servingUnitRaw: "g",
-      servingUnitGroup: "measure",
-
-      unitServing: null,
-
-      defaultServing: {
-        label: `${defaultGrams}g`,
-        type: "grams",
-        grams: defaultGrams,
-        displayUnit: "g",
-      },
-
-      portions: buildGramPortions(defaultGrams),
-
-      dataQuality: "user-entered",
-      createdAt: new Date().toISOString(),
-      notes: "User-created food. Nutrition entered per 100g.",
-    };
   }
+
+  const defaultGrams = toNumber(formData.defaultGrams) || 100;
+
+  return {
+    ...(existingFood || {}),
+    id,
+    source: "Custom",
+    sourceFoodCode: id,
+    barcode: "",
+    brand,
+    name: brand ? `${name} · ${brand}` : name,
+    shortName: name,
+    category,
+    foodType: "custom",
+    cuisine: "Custom",
+    aliases: buildAliases(name, brand),
+
+    caloriesPer100g: toNumber(formData.calories),
+    energyKjPer100g: 0,
+    proteinPer100g: toNumber(formData.protein),
+    carbsPer100g: toNumber(formData.carbs),
+    fatPer100g: toNumber(formData.fat),
+    freeSugarPer100g: toNumber(formData.freeSugar),
+
+    servingUnitRaw: "g",
+    servingUnitGroup: "measure",
+
+    unitServing: null,
+
+    defaultServing: {
+      label: `${defaultGrams}g`,
+      type: "grams",
+      grams: defaultGrams,
+      displayUnit: "g",
+    },
+
+    portions: buildGramPortions(defaultGrams),
+
+    dataQuality: "user-entered",
+    createdAt: existingFood?.createdAt || now,
+    updatedAt: existingFood ? now : undefined,
+    notes: "User-created food. Nutrition entered per 100g.",
+  };
+}
+
+export function isCustomFood(food) {
+  return food?.foodType === "custom" || food?.source === "Custom";
+}
+
+export function getCustomFoods() {
+  return getStoredCustomFoods();
+}
+
+export function getCustomFoodById(foodId) {
+  return getStoredCustomFoods().find((food) => food.id === foodId) || null;
+}
+
+export function saveCustomFood(formData) {
+  const food = buildCustomFoodFromForm(formData);
 
   const currentFoods = getStoredCustomFoods();
   const nextFoods = [food, ...currentFoods];
 
   saveStoredCustomFoods(nextFoods);
-
-  window.dispatchEvent(new Event("kyc:custom-foods-updated"));
+  dispatchCustomFoodsUpdated();
 
   return food;
+}
+
+export function updateCustomFood(foodId, formData) {
+  const currentFoods = getStoredCustomFoods();
+  const existingFood = currentFoods.find((food) => food.id === foodId);
+
+  if (!existingFood) {
+    throw new Error("Custom food not found.");
+  }
+
+  const updatedFood = buildCustomFoodFromForm(formData, existingFood);
+
+  const nextFoods = currentFoods.map((food) => {
+    if (food.id !== foodId) {
+      return food;
+    }
+
+    return updatedFood;
+  });
+
+  saveStoredCustomFoods(nextFoods);
+  dispatchCustomFoodsUpdated();
+
+  return updatedFood;
 }
 
 export function deleteCustomFood(foodId) {
@@ -220,8 +258,11 @@ export function deleteCustomFood(foodId) {
   const nextFoods = currentFoods.filter((food) => food.id !== foodId);
 
   saveStoredCustomFoods(nextFoods);
-
-  window.dispatchEvent(new Event("kyc:custom-foods-updated"));
+  dispatchCustomFoodsUpdated();
 
   return nextFoods;
+}
+
+export function getCustomFoodsStorageKey() {
+  return CUSTOM_FOODS_KEY;
 }

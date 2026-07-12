@@ -1,15 +1,17 @@
 import { useState } from "react";
 import FavoriteButton from "../../components/ui/FavoriteButton";
+import { isCustomFood } from "../../data/customFoodUtils";
 import {
   isFavoriteFood,
   toggleFavoriteFood,
 } from "../favorites/favoriteStorage";
 
-function FoodResultCard({ food, onSelect, onQuickAdd }) {
+function FoodResultCard({ food, onSelect, onQuickAdd, onEditCustomFood }) {
   const [, setFavoriteVersion] = useState(0);
 
   const favorite = isFavoriteFood(food.id);
   const displayFood = getFoodDisplayData(food);
+  const customFood = isCustomFood(food);
 
   function handleCardKeyDown(event) {
     if (event.key === "Enter") {
@@ -37,6 +39,14 @@ function FoodResultCard({ food, onSelect, onQuickAdd }) {
     window.dispatchEvent(new Event("kyc:favorites-changed"));
   }
 
+  function handleEditCustomFood(event) {
+    event.stopPropagation();
+
+    if (typeof onEditCustomFood === "function") {
+      onEditCustomFood(food);
+    }
+  }
+
   return (
     <div
       role="button"
@@ -52,9 +62,15 @@ function FoodResultCard({ food, onSelect, onQuickAdd }) {
               {displayFood.name}
             </h3>
 
-            {displayFood.category && (
+            {displayFood.category && !customFood && (
               <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-emerald-700">
                 {displayFood.category}
+              </span>
+            )}
+
+            {customFood && (
+              <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-indigo-700">
+                Custom
               </span>
             )}
           </div>
@@ -78,7 +94,9 @@ function FoodResultCard({ food, onSelect, onQuickAdd }) {
           </div>
 
           <p className="mt-2 text-xs font-medium text-slate-400">
-            Sourced from {displayFood.source} Data
+            {customFood
+              ? "User-created food"
+              : `Sourced from ${displayFood.source} Data`}
             {displayFood.subText ? ` · ${displayFood.subText}` : ""}
           </p>
         </div>
@@ -88,15 +106,29 @@ function FoodResultCard({ food, onSelect, onQuickAdd }) {
             {displayFood.calories}
           </span>
 
-          <FavoriteButton
-            active={favorite}
-            onClick={handleFavoriteClick}
-            label={
-              favorite
-                ? `Remove ${displayFood.name} from favorites`
-                : `Add ${displayFood.name} to favorites`
-            }
-          />
+          <div className="flex flex-col items-end gap-2">
+            <FavoriteButton
+              active={favorite}
+              onClick={handleFavoriteClick}
+              label={
+                favorite
+                  ? `Remove ${displayFood.name} from favorites`
+                  : `Add ${displayFood.name} to favorites`
+              }
+            />
+
+            {customFood && (
+              <button
+                type="button"
+                onClick={handleEditCustomFood}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-50 text-sm font-black text-indigo-600 shadow-sm ring-1 ring-indigo-100 transition active:scale-[0.95] active:bg-indigo-100"
+                aria-label={`Edit ${displayFood.name}`}
+                title={`Edit ${displayFood.name}`}
+              >
+                ✎
+              </button>
+            )}
+          </div>
 
           <button
             type="button"

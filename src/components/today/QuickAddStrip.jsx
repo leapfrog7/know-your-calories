@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { getFoodById } from "../../data/foods";
+import { getCustomFoods, isCustomFood } from "../../data/customFoodUtils";
 import {
   getFavoriteFoodIds,
   removeFavoriteFood,
@@ -9,18 +10,31 @@ import { calculateNutrition } from "../../features/meals/nutrition";
 function QuickAddStrip({ foods, onSelectFood }) {
   const [mode, setMode] = useState("quick");
   const [favoriteIds, setFavoriteIds] = useState(() => getFavoriteFoodIds());
+  const [customFoods, setCustomFoods] = useState(() => getCustomFoods());
 
   useEffect(() => {
     function handleFavoritesChanged() {
       setFavoriteIds(getFavoriteFoodIds());
     }
 
+    function handleCustomFoodsChanged() {
+      setCustomFoods(getCustomFoods());
+    }
+
     window.addEventListener("kyc:favorites-changed", handleFavoritesChanged);
+    window.addEventListener(
+      "kyc:custom-foods-updated",
+      handleCustomFoodsChanged,
+    );
 
     return () => {
       window.removeEventListener(
         "kyc:favorites-changed",
         handleFavoritesChanged,
+      );
+      window.removeEventListener(
+        "kyc:custom-foods-updated",
+        handleCustomFoodsChanged,
       );
     };
   }, []);
@@ -29,9 +43,20 @@ function QuickAddStrip({ foods, onSelectFood }) {
     return favoriteIds.map(getFoodById).filter(Boolean);
   }, [favoriteIds]);
 
-  const activeFoods = mode === "quick" ? foods : favoriteFoods;
-  const hasQuickFoods = foods.length > 0;
+  const quickFoods = useMemo(() => {
+    return foods.filter((food) => !isCustomFood(food));
+  }, [foods]);
+
+  const activeFoods =
+    mode === "quick"
+      ? quickFoods
+      : mode === "favorites"
+        ? favoriteFoods
+        : customFoods;
+
+  const hasQuickFoods = quickFoods.length > 0;
   const hasFavoriteFoods = favoriteFoods.length > 0;
+  const hasCustomFoods = customFoods.length > 0;
 
   function handleRemoveFavorite(event, foodId) {
     event.stopPropagation();
@@ -51,13 +76,11 @@ function QuickAddStrip({ foods, onSelectFood }) {
           </p>
 
           <h3 className="mt-1 text-xl font-black tracking-tight text-slate-950">
-            {mode === "quick" ? "Quick Add" : "Favorites"}
+            {getShelfTitle(mode)}
           </h3>
 
           <p className="mt-1 text-xs font-medium text-slate-500">
-            {mode === "quick"
-              ? "Recent and frequently logged foods."
-              : "Foods you saved for repeated meals."}
+            {getShelfDescription(mode)}
           </p>
         </div>
 
@@ -66,7 +89,7 @@ function QuickAddStrip({ foods, onSelectFood }) {
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-2 rounded-2xl bg-slate-100 p-1">
+      <div className="mt-4 grid grid-cols-3 gap-1.5 rounded-2xl bg-slate-100 p-1">
         <ShelfTab
           label="Quick ⚡️"
           active={mode === "quick"}
@@ -78,6 +101,12 @@ function QuickAddStrip({ foods, onSelectFood }) {
           active={mode === "favorites"}
           onClick={() => setMode("favorites")}
         />
+
+        <ShelfTab
+          label="Custom ✍️"
+          active={mode === "custom"}
+          onClick={() => setMode("custom")}
+        />
       </div>
 
       {activeFoods.length === 0 ? (
@@ -85,6 +114,7 @@ function QuickAddStrip({ foods, onSelectFood }) {
           mode={mode}
           hasQuickFoods={hasQuickFoods}
           hasFavoriteFoods={hasFavoriteFoods}
+          hasCustomFoods={hasCustomFoods}
         />
       ) : (
         <div className="mt-4 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -108,7 +138,7 @@ function ShelfTab({ label, active, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-xl px-4 py-2.5 text-sm font-black transition active:scale-[0.98] ${
+      className={`rounded-xl px-2 py-2.5 text-xs font-black transition active:scale-[0.98] sm:text-sm ${
         active
           ? "bg-slate-800 text-white shadow-sm"
           : "text-slate-400 active:bg-white/70"
@@ -122,16 +152,14 @@ function ShelfTab({ label, active, onClick }) {
 function EmptyShelf({ mode }) {
   return (
     <div className="mt-4 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center">
-      <p className="text-2xl">{mode === "quick" ? "🍽️" : "⭐"}</p>
+      <p className="text-2xl">{getEmptyIcon(mode)}</p>
 
       <p className="mt-2 text-sm font-black text-slate-700">
-        {mode === "quick" ? "No quick foods yet" : "No favorites yet"}
+        {getEmptyTitle(mode)}
       </p>
 
       <p className="mx-auto mt-1 max-w-xs text-xs leading-relaxed text-slate-500">
-        {mode === "quick"
-          ? "Log foods a few times and they will appear here."
-          : "Tap the star on any food to save it here permanently."}
+        {getEmptyDescription(mode)}
       </p>
     </div>
   );
@@ -177,13 +205,81 @@ function QuickFoodCard({ food, mode, onSelectFood, onRemoveFavorite }) {
         {nutrition.calories} kcal · {defaultPortion.label}
       </p>
 
-      {food.source && (
-        <p className="mt-2 inline-flex rounded-full bg-white px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-slate-500">
-          {food.source}
-        </p>
-      )}
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        {mode === "custom" ? (
+          <span className="inline-flex rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-indigo-700">
+            Custom
+          </span>
+        ) : (
+          food.source && (
+            <span className="inline-flex rounded-full bg-white px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-slate-500">
+              {food.source}
+            </span>
+          )
+        )}
+      </div>
     </button>
   );
+}
+
+function getShelfTitle(mode) {
+  if (mode === "favorites") {
+    return "Favorites";
+  }
+
+  if (mode === "custom") {
+    return "Custom Foods";
+  }
+
+  return "Quick Add";
+}
+
+function getShelfDescription(mode) {
+  if (mode === "favorites") {
+    return "Foods you saved for repeated meals.";
+  }
+
+  if (mode === "custom") {
+    return "Your own saved foods for faster logging.";
+  }
+
+  return "Recent and frequently logged foods.";
+}
+
+function getEmptyIcon(mode) {
+  if (mode === "favorites") {
+    return "⭐";
+  }
+
+  if (mode === "custom") {
+    return "✍️";
+  }
+
+  return "🍽️";
+}
+
+function getEmptyTitle(mode) {
+  if (mode === "favorites") {
+    return "No favorites yet";
+  }
+
+  if (mode === "custom") {
+    return "No custom foods yet";
+  }
+
+  return "No quick foods yet";
+}
+
+function getEmptyDescription(mode) {
+  if (mode === "favorites") {
+    return "Tap the star on any food to save it here permanently.";
+  }
+
+  if (mode === "custom") {
+    return "Add your own foods and they will appear here.";
+  }
+
+  return "Log foods a few times and they will appear here.";
 }
 
 export default QuickAddStrip;
