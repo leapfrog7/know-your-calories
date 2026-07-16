@@ -4,11 +4,12 @@ import PlanSummaryCard from "../components/plan/PlanSummaryCard";
 import QuickAddStrip from "../components/today/QuickAddStrip";
 import MealGroup from "../components/today/MealGroup";
 import {
-  clearEntriesForDate,
+  clearPlannedEntriesForDate,
   deleteEntryFromDate,
   getAllDays,
   getDayLog,
   getMealSettings,
+  getPlannedEntries,
 } from "../features/meals/mealStorage";
 import {
   addDaysToDateKey,
@@ -17,18 +18,22 @@ import {
   getRecentFoodIds,
   getRelativeDateLabel,
   getTomorrowKey,
+  getTodayKey,
   groupEntriesByMeal,
   MEAL_ORDER,
 } from "../features/meals/mealHelpers";
 import { calculateTotals, roundTotals } from "../features/meals/nutrition";
 
-function PlanPage({ onOpenAddFood }) {
-  const [selectedDateKey, setSelectedDateKey] = useState(() =>
-    getTomorrowKey(),
-  );
-  const [dayLog, setDayLog] = useState(() => getDayLog(getTomorrowKey()));
+function PlanPage({
+  onOpenAddFood,
+  selectedDateKey = getTomorrowKey(),
+  onSelectedDateChange,
+}) {
+  const [dayLog, setDayLog] = useState(() => getDayLog(selectedDateKey));
 
-  const entries = dayLog.entries || [];
+  const entries = useMemo(() => {
+    return getPlannedEntries(dayLog.entries);
+  }, [dayLog.entries]);
 
   const targets = useMemo(() => getMealSettings(), []);
 
@@ -58,7 +63,8 @@ function PlanPage({ onOpenAddFood }) {
   const displayDate = formatDisplayDate(selectedDateKey);
 
   function refreshDate(dateKey) {
-    setSelectedDateKey(dateKey);
+    if (dateKey < getTodayKey()) return;
+    onSelectedDateChange?.(dateKey);
     setDayLog(getDayLog(dateKey));
   }
 
@@ -92,7 +98,7 @@ function PlanPage({ onOpenAddFood }) {
   }
 
   function handleClearPlan() {
-    const updatedDayLog = clearEntriesForDate(selectedDateKey);
+    const updatedDayLog = clearPlannedEntriesForDate(selectedDateKey);
     setDayLog(updatedDayLog);
   }
 
@@ -123,6 +129,7 @@ function PlanPage({ onOpenAddFood }) {
 
           <input
             type="date"
+            min={getTodayKey()}
             value={selectedDateKey}
             onChange={handleDateInputChange}
             className="shrink-0 rounded-2xl border border-indigo-100 bg-indigo-50 px-3 py-2 text-sm font-black text-indigo-700 outline-none"
@@ -131,7 +138,11 @@ function PlanPage({ onOpenAddFood }) {
         </div>
 
         <div className="mt-4 grid grid-cols-3 gap-2">
-          <DateButton label="Previous" onClick={handlePreviousDay} />
+          <DateButton
+            label="Previous"
+            onClick={handlePreviousDay}
+            disabled={selectedDateKey <= getTodayKey()}
+          />
           <DateButton label="Tomorrow" onClick={handleTomorrow} />
           <DateButton label="Next" onClick={handleNextDay} />
         </div>
@@ -195,7 +206,7 @@ function PlanPage({ onOpenAddFood }) {
             </p>
 
             <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-slate-500">
-              Add breakfast, lunch, dinner or snacks to estimate tomorrow’s
+              Add breakfast, lunch, dinner or snacks to estimate this day&apos;s
               calories in advance.
             </p>
 
@@ -226,12 +237,13 @@ function PlanPage({ onOpenAddFood }) {
   );
 }
 
-function DateButton({ label, onClick }) {
+function DateButton({ label, onClick, disabled = false }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="rounded-2xl bg-indigo-50 px-3 py-2.5 text-xs font-black text-indigo-700 transition active:scale-[0.98] active:bg-indigo-100"
+      disabled={disabled}
+      className="rounded-2xl bg-indigo-50 px-3 py-2.5 text-xs font-black text-indigo-700 transition active:scale-[0.98] active:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-40"
     >
       {label}
     </button>

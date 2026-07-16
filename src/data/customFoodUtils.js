@@ -44,6 +44,21 @@ function saveStoredCustomFoods(foods) {
   localStorage.setItem(CUSTOM_FOODS_KEY, JSON.stringify(foods));
 }
 
+function normalizeCustomFoods(foods) {
+  if (!Array.isArray(foods)) return [];
+
+  const seenIds = new Set();
+
+  return foods.filter((food) => {
+    if (!food || typeof food !== "object" || Array.isArray(food)) return false;
+    if (typeof food.id !== "string" || !food.id.trim()) return false;
+    if (seenIds.has(food.id)) return false;
+
+    seenIds.add(food.id);
+    return true;
+  });
+}
+
 function dispatchCustomFoodsUpdated() {
   window.dispatchEvent(new Event("kyc:custom-foods-updated"));
 }
@@ -261,6 +276,31 @@ export function deleteCustomFood(foodId) {
   dispatchCustomFoodsUpdated();
 
   return nextFoods;
+}
+
+export function replaceCustomFoods(foods) {
+  const normalizedFoods = normalizeCustomFoods(foods);
+  saveStoredCustomFoods(normalizedFoods);
+  dispatchCustomFoodsUpdated();
+  return normalizedFoods;
+}
+
+export function mergeCustomFoods(foods) {
+  const currentFoods = normalizeCustomFoods(getStoredCustomFoods());
+  const currentIds = new Set(currentFoods.map((food) => food.id));
+  const importedFoods = normalizeCustomFoods(foods).filter(
+    (food) => !currentIds.has(food.id),
+  );
+  const mergedFoods = [...currentFoods, ...importedFoods];
+
+  saveStoredCustomFoods(mergedFoods);
+  dispatchCustomFoodsUpdated();
+  return mergedFoods;
+}
+
+export function clearCustomFoods() {
+  localStorage.removeItem(CUSTOM_FOODS_KEY);
+  dispatchCustomFoodsUpdated();
 }
 
 export function getCustomFoodsStorageKey() {

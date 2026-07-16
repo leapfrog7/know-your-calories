@@ -49,7 +49,9 @@ export function getFrequentFoodIds(days = {}, limit = 8) {
   const counts = {};
 
   Object.values(days).forEach((dayLog) => {
-    const entries = dayLog?.entries || [];
+    const entries = (dayLog?.entries || []).filter((entry) => {
+      return entry.status !== "planned" && entry.status !== "skipped";
+    });
 
     entries.forEach((entry) => {
       if (!entry.foodId) return;
@@ -66,6 +68,9 @@ export function getFrequentFoodIds(days = {}, limit = 8) {
 export function getRecentFoodIds(days = {}, limit = 8) {
   const entries = Object.values(days)
     .flatMap((dayLog) => dayLog?.entries || [])
+    .filter((entry) => {
+      return entry.status !== "planned" && entry.status !== "skipped";
+    })
     .filter((entry) => entry.foodId && entry.createdAt)
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 

@@ -120,7 +120,9 @@ export function buildPeriodSummary(days = {}, mode = "week") {
   const dateKeys = getDatesBetween(startDate, endDate);
 
   const dailyRows = dateKeys.map((dateKey) => {
-    const entries = days[dateKey]?.entries || [];
+    const entries = (days[dateKey]?.entries || []).filter((entry) => {
+      return entry.status !== "planned" && entry.status !== "skipped";
+    });
     const totals = roundTotals(calculateTotals(entries));
 
     return {

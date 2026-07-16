@@ -1,13 +1,21 @@
 import { getTodayKey } from "./mealHelpers";
 
 const STORAGE_KEY = "kyc_daily_log_v1";
+const CURRENT_STORAGE_VERSION = 2;
 
 const DEFAULT_STORAGE = {
-  version: 1,
+  version: CURRENT_STORAGE_VERSION,
   days: {},
   settings: {
     defaultCalorieTarget: 2000,
     defaultProteinTarget: 80,
+    mealPlanMode: "time",
+    mealTimes: {
+      Breakfast: "06:00",
+      Lunch: "12:00",
+      "Evening Snack": "16:00",
+      Dinner: "20:00",
+    },
   },
 };
 
@@ -23,34 +31,45 @@ function isPlainObject(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
-function normalizeEntry(entry, dateKey) {
+function normalizeEntry(entry, dateKey, options = {}) {
+  const validStatuses = new Set(["planned", "consumed", "skipped"]);
+  const inferredStatus =
+    options.inferMissingStatus && dateKey > getTodayKey()
+      ? "planned"
+      : "consumed";
+
   return {
     ...entry,
     id: entry.id || createId(),
     date: entry.date || dateKey,
     createdAt: entry.createdAt || new Date().toISOString(),
+    status: validStatuses.has(entry.status) ? entry.status : inferredStatus,
   };
 }
 
-function normalizeDayLog(dayLog, fallbackDateKey) {
+function normalizeDayLog(dayLog, fallbackDateKey, options = {}) {
   const dateKey = dayLog?.date || fallbackDateKey;
 
   return {
     date: dateKey,
     entries: Array.isArray(dayLog?.entries)
-      ? dayLog.entries.map((entry) => normalizeEntry(entry, dateKey))
+      ? dayLog.entries.map((entry) => normalizeEntry(entry, dateKey, options))
       : [],
   };
 }
 
-function normalizeDays(daysInput) {
+function normalizeDays(daysInput, options = {}) {
   const normalizedDays = {};
 
   if (Array.isArray(daysInput)) {
     daysInput.forEach((dayLog) => {
       if (!dayLog?.date) return;
 
-      normalizedDays[dayLog.date] = normalizeDayLog(dayLog, dayLog.date);
+      normalizedDays[dayLog.date] = normalizeDayLog(
+        dayLog,
+        dayLog.date,
+        options,
+      );
     });
 
     return normalizedDays;
@@ -58,7 +77,7 @@ function normalizeDays(daysInput) {
 
   if (isPlainObject(daysInput)) {
     Object.entries(daysInput).forEach(([dateKey, dayLog]) => {
-      normalizedDays[dateKey] = normalizeDayLog(dayLog, dateKey);
+      normalizedDays[dateKey] = normalizeDayLog(dayLog, dateKey, options);
     });
 
     return normalizedDays;
@@ -76,18 +95,33 @@ export function getMealStorage() {
 
   try {
     const parsed = JSON.parse(raw);
-    const normalizedDays = normalizeDays(parsed.days);
+    const isLegacyStorage =
+      !Number.isFinite(Number(parsed.version)) ||
+      Number(parsed.version) < CURRENT_STORAGE_VERSION;
+    const normalizedDays = normalizeDays(parsed.days, {
+      inferMissingStatus: isLegacyStorage,
+    });
 
-    return {
+    const normalizedStorage = {
       ...DEFAULT_STORAGE,
       ...parsed,
-      version: 1,
+      version: CURRENT_STORAGE_VERSION,
       days: normalizedDays,
       settings: {
         ...DEFAULT_STORAGE.settings,
         ...(parsed.settings || {}),
+        mealTimes: {
+          ...DEFAULT_STORAGE.settings.mealTimes,
+          ...(parsed.settings?.mealTimes || {}),
+        },
       },
     };
+
+    if (isLegacyStorage) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizedStorage));
+    }
+
+    return normalizedStorage;
   } catch {
     return DEFAULT_STORAGE;
   }
@@ -97,11 +131,15 @@ export function saveMealStorage(storage) {
   const safeStorage = {
     ...DEFAULT_STORAGE,
     ...storage,
-    version: 1,
+    version: CURRENT_STORAGE_VERSION,
     days: normalizeDays(storage?.days),
     settings: {
       ...DEFAULT_STORAGE.settings,
       ...(storage?.settings || {}),
+      mealTimes: {
+        ...DEFAULT_STORAGE.settings.mealTimes,
+        ...(storage?.settings?.mealTimes || {}),
+      },
     },
   };
 
@@ -217,14 +255,21 @@ export function getSortedDayLogs() {
   const days = getAllDays();
 
   return Object.keys(days)
+    .filter((dateKey) => dateKey <= getTodayKey())
     .sort()
     .reverse()
-    .map((dateKey) => days[dateKey]);
+    .map((dateKey) => ({
+      ...days[dateKey],
+      entries: getConsumedEntries(days[dateKey]?.entries),
+    }))
+    .filter((dayLog) => dayLog.entries.length > 0);
 }
 
 export function replaceAllDays(importedDays) {
   const storage = getMealStorage();
-  const normalizedDays = normalizeDays(importedDays);
+  const normalizedDays = normalizeDays(importedDays, {
+    inferMissingStatus: true,
+  });
 
   const updatedStorage = {
     ...storage,
@@ -245,10 +290,52 @@ export function clearEntriesForDate(dateKey = getTodayKey()) {
   return saveDayLog(dateKey, updatedDayLog);
 }
 
+export function clearPlannedEntriesForDate(dateKey = getTodayKey()) {
+  const dayLog = getDayLog(dateKey);
+  const updatedDayLog = {
+    ...dayLog,
+    entries: (dayLog.entries || []).filter(
+      (entry) => entry.status !== "planned" && entry.status !== "skipped",
+    ),
+  };
+
+  return saveDayLog(dateKey, updatedDayLog);
+}
+
+export function updatePlannedMealStatus(
+  meal,
+  status,
+  dateKey = getTodayKey(),
+) {
+  if (!["consumed", "skipped"].includes(status)) {
+    return getDayLog(dateKey);
+  }
+
+  const dayLog = getDayLog(dateKey);
+  const now = new Date().toISOString();
+  const updatedDayLog = {
+    ...dayLog,
+    entries: (dayLog.entries || []).map((entry) => {
+      if (entry.status !== "planned" || entry.meal !== meal) return entry;
+
+      return {
+        ...entry,
+        status,
+        updatedAt: now,
+        ...(status === "consumed" ? { consumedAt: now } : { skippedAt: now }),
+      };
+    }),
+  };
+
+  return saveDayLog(dateKey, updatedDayLog);
+}
+
 export function mergeImportedDays(importedDays) {
   const storage = getMealStorage();
   const existingDays = normalizeDays(storage.days);
-  const incomingDays = normalizeDays(importedDays);
+  const incomingDays = normalizeDays(importedDays, {
+    inferMissingStatus: true,
+  });
 
   const mergedDays = {
     ...existingDays,
@@ -319,12 +406,27 @@ export function saveMealSettings(nextSettings) {
       ...DEFAULT_STORAGE.settings,
       ...(storage.settings || {}),
       ...(nextSettings || {}),
+      mealTimes: {
+        ...DEFAULT_STORAGE.settings.mealTimes,
+        ...(storage.settings?.mealTimes || {}),
+        ...(nextSettings?.mealTimes || {}),
+      },
     },
   };
 
   saveMealStorage(updatedStorage);
 
   return updatedStorage.settings;
+}
+
+export function getConsumedEntries(entries = []) {
+  return entries.filter((entry) => {
+    return entry?.status !== "planned" && entry?.status !== "skipped";
+  });
+}
+
+export function getPlannedEntries(entries = []) {
+  return entries.filter((entry) => entry?.status === "planned");
 }
 
 export function resetMealSettings() {

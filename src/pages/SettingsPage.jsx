@@ -1,6 +1,7 @@
 import DataBackupPanel from "../components/settings/DataBackupPanel";
 import TargetSettingsPanel from "../components/settings/TargetSettingsPanel";
 import ClearDataPanel from "../components/settings/ClearDataPanel";
+import MealPlanSettingsPanel from "../components/settings/MealPlanSettingsPanel";
 
 function SettingsPage() {
   return (
@@ -33,6 +34,8 @@ function SettingsPage() {
       </section>
 
       <TargetSettingsPanel />
+
+      <MealPlanSettingsPanel />
 
       <DataBackupPanel />
 

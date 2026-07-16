@@ -1,29 +1,66 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getAllFoods, getFoodById } from "../data/foods";
 import TodaySummaryCard from "../components/today/TodaySummaryCard";
 import QuickAddStrip from "../components/today/QuickAddStrip";
 import MealGroup from "../components/today/MealGroup";
 import InstallAppButton from "../components/ui/InstallAppButton";
+import BackupReminder from "../components/today/BackupReminder";
+import PlannedMealsPanel from "../components/today/PlannedMealsPanel";
 import {
   deleteEntryFromDate,
   getAllDays,
+  getConsumedEntries,
   getMealSettings,
+  getPlannedEntries,
   getTodayLog,
+  updatePlannedMealStatus,
 } from "../features/meals/mealStorage";
 import {
   getFrequentFoodIds,
   getRecentFoodIds,
+  getTodayKey,
   groupEntriesByMeal,
   MEAL_ORDER,
 } from "../features/meals/mealHelpers";
 import { calculateTotals, roundTotals } from "../features/meals/nutrition";
+import {
+  downloadBackupFile,
+  getBackupReminderStatus,
+  snoozeBackupReminder,
+} from "../features/backup/backupHelpers";
 
 function TodayPage({ onOpenAddFood }) {
   const [dayLog, setDayLog] = useState(() => getTodayLog());
+  const [backupReminder, setBackupReminder] = useState(() => {
+    return getBackupReminderStatus();
+  });
+  const [now, setNow] = useState(() => new Date());
 
-  const entries = dayLog.entries || [];
+  const entries = useMemo(() => {
+    return getConsumedEntries(dayLog.entries);
+  }, [dayLog.entries]);
+  const plannedEntries = useMemo(() => {
+    return getPlannedEntries(dayLog.entries);
+  }, [dayLog.entries]);
 
-  const targets = useMemo(() => getMealSettings(), []);
+  const settings = useMemo(() => getMealSettings(), []);
+
+  useEffect(() => {
+    function refreshTime() {
+      setNow(new Date());
+      if (dayLog.date !== getTodayKey()) {
+        setDayLog(getTodayLog());
+      }
+    }
+
+    const intervalId = window.setInterval(refreshTime, 60 * 1000);
+    document.addEventListener("visibilitychange", refreshTime);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", refreshTime);
+    };
+  }, [dayLog.date]);
 
   const totals = useMemo(() => {
     return roundTotals(calculateTotals(entries));
@@ -56,11 +93,50 @@ function TodayPage({ onOpenAddFood }) {
     onOpenAddFood(entry.foodId, entry);
   }
 
+  function handleEditPlannedEntry(entry) {
+    onOpenAddFood(entry.foodId, entry, dayLog.date, "plan", "today");
+  }
+
+  function handleConfirmPlannedMeal(meal) {
+    setDayLog(updatePlannedMealStatus(meal, "consumed", dayLog.date));
+  }
+
+  function handleSkipPlannedMeal(meal) {
+    setDayLog(updatePlannedMealStatus(meal, "skipped", dayLog.date));
+  }
+
+  function handleBackupNow() {
+    const lastBackupAt = downloadBackupFile();
+    setBackupReminder({ shouldShow: false, lastBackupAt });
+  }
+
+  function handleBackupLater() {
+    snoozeBackupReminder();
+    setBackupReminder((current) => ({ ...current, shouldShow: false }));
+  }
+
   return (
     <div className="space-y-5">
-      <TodaySummaryCard totals={totals} targets={targets} />
+      <TodaySummaryCard totals={totals} targets={settings} />
 
       <InstallAppButton />
+
+      {backupReminder.shouldShow && (
+        <BackupReminder
+          lastBackupAt={backupReminder.lastBackupAt}
+          onBackup={handleBackupNow}
+          onSnooze={handleBackupLater}
+        />
+      )}
+
+      <PlannedMealsPanel
+        entries={plannedEntries}
+        settings={settings}
+        now={now}
+        onConfirmMeal={handleConfirmPlannedMeal}
+        onEditEntry={handleEditPlannedEntry}
+        onSkipMeal={handleSkipPlannedMeal}
+      />
 
       <QuickAddStrip foods={quickFoods} onSelectFood={onOpenAddFood} />
 

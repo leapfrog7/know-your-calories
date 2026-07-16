@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { clearMealStorage } from "../../features/meals/mealStorage";
 import { clearFavoriteFoods } from "../../features/favorites/favoriteStorage";
+import { clearCustomFoods } from "../../data/customFoodUtils";
+import { clearBackupReminderState } from "../../features/backup/backupHelpers";
 
 function ClearDataPanel() {
   const [confirmText, setConfirmText] = useState("");
@@ -16,8 +18,10 @@ function ClearDataPanel() {
 
     clearMealStorage();
     clearFavoriteFoods();
+    clearCustomFoods();
+    clearBackupReminderState();
 
-    setStatus("All local meal data and favorites have been cleared.");
+    setStatus("All local meal data, custom foods, and favorites have been cleared.");
 
     window.location.reload();
   }

@@ -1,25 +1,35 @@
 import { useRef, useState } from "react";
 import {
   downloadBackupFile,
+  getBackupReminderStatus,
   parseBackupFile,
 } from "../../features/backup/backupHelpers";
 import {
   mergeImportedDays,
   replaceAllDays,
+  saveMealSettings,
 } from "../../features/meals/mealStorage";
 import {
   getFavoriteFoodIds,
   saveFavoriteFoodIds,
 } from "../../features/favorites/favoriteStorage";
+import {
+  mergeCustomFoods,
+  replaceCustomFoods,
+} from "../../data/customFoodUtils";
 function DataBackupPanel() {
   const fileInputRef = useRef(null);
 
   const [status, setStatus] = useState("");
   const [pendingBackup, setPendingBackup] = useState(null);
   const [pendingFileName, setPendingFileName] = useState("");
+  const [lastBackupAt, setLastBackupAt] = useState(() => {
+    return getBackupReminderStatus().lastBackupAt;
+  });
 
   function handleExport() {
-    downloadBackupFile();
+    const backedUpAt = downloadBackupFile();
+    setLastBackupAt(backedUpAt);
     setStatus("Backup file downloaded.");
   }
 
@@ -53,6 +63,12 @@ function DataBackupPanel() {
 
     replaceAllDays(pendingBackup.data.days);
     saveFavoriteFoodIds(pendingBackup.data.favorites || []);
+    if (pendingBackup.compatibility?.hasCustomFoods) {
+      replaceCustomFoods(pendingBackup.data.customFoods);
+    }
+    if (pendingBackup.compatibility?.hasSettings) {
+      saveMealSettings(pendingBackup.data.settings);
+    }
 
     setPendingBackup(null);
     setPendingFileName("");
@@ -74,6 +90,12 @@ function DataBackupPanel() {
     ];
 
     saveFavoriteFoodIds(mergedFavoriteIds);
+    if (pendingBackup.compatibility?.hasCustomFoods) {
+      mergeCustomFoods(pendingBackup.data.customFoods);
+    }
+    if (pendingBackup.compatibility?.hasSettings) {
+      saveMealSettings(pendingBackup.data.settings);
+    }
 
     setPendingBackup(null);
     setPendingFileName("");
@@ -101,8 +123,8 @@ function DataBackupPanel() {
           </h2>
 
           <p className="mt-2 text-sm leading-relaxed text-slate-500">
-            Save your meal logs as a backup file and restore them on another
-            device.
+            Save your meal logs, custom foods, favorites, and targets as a
+            backup file and restore them on another device.
           </p>
         </div>
 
@@ -128,6 +150,12 @@ function DataBackupPanel() {
           Import
         </button>
       </div>
+
+      <p className="mt-3 text-xs font-bold text-slate-500">
+        {lastBackupAt
+          ? `Last backup: ${new Date(lastBackupAt).toLocaleDateString()}`
+          : "No backup has been recorded on this device yet."}
+      </p>
 
       <input
         ref={fileInputRef}

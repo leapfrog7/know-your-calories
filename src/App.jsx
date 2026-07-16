@@ -6,6 +6,7 @@ import HistoryPage from "./pages/HistoryPage";
 import SummaryPage from "./pages/SummaryPage";
 import SettingsPage from "./pages/SettingsPage";
 import AddFoodScreen from "./features/food/AddFoodScreen";
+import { getTodayKey, getTomorrowKey } from "./features/meals/mealHelpers";
 
 function App() {
   const [activePage, setActivePage] = useState("today");
@@ -13,17 +14,23 @@ function App() {
   const [editingEntry, setEditingEntry] = useState(null);
   const [targetDateKey, setTargetDateKey] = useState(null);
   const [addMode, setAddMode] = useState("today");
+  const [addReturnPage, setAddReturnPage] = useState("today");
+  const [selectedPlanDateKey, setSelectedPlanDateKey] = useState(() =>
+    getTomorrowKey(),
+  );
 
   function openAddFood(
     foodId = null,
     entry = null,
     nextTargetDateKey = null,
     nextAddMode = "today",
+    nextReturnPage = nextAddMode === "plan" ? "plan" : "today",
   ) {
     setQuickFoodId(foodId);
     setEditingEntry(entry);
     setTargetDateKey(nextTargetDateKey);
     setAddMode(nextAddMode);
+    setAddReturnPage(nextReturnPage);
     setActivePage("add-food");
   }
 
@@ -32,6 +39,7 @@ function App() {
     setEditingEntry(null);
     setTargetDateKey(null);
     setAddMode("today");
+    setAddReturnPage("today");
   }
 
   function goToday() {
@@ -41,6 +49,11 @@ function App() {
 
   function goPlan() {
     clearAddState();
+    setSelectedPlanDateKey((currentDateKey) => {
+      return currentDateKey < getTodayKey()
+        ? getTomorrowKey()
+        : currentDateKey;
+    });
     setActivePage("plan");
   }
 
@@ -60,7 +73,7 @@ function App() {
   }
 
   function handleFoodAdded() {
-    if (addMode === "plan") {
+    if (addReturnPage === "plan") {
       goPlan();
       return;
     }
@@ -69,7 +82,7 @@ function App() {
   }
 
   function handleBackFromAddFood() {
-    if (addMode === "plan") {
+    if (addReturnPage === "plan") {
       goPlan();
       return;
     }
@@ -89,7 +102,13 @@ function App() {
     >
       {activePage === "today" && <TodayPage onOpenAddFood={openAddFood} />}
 
-      {activePage === "plan" && <PlanPage onOpenAddFood={openAddFood} />}
+      {activePage === "plan" && (
+        <PlanPage
+          onOpenAddFood={openAddFood}
+          selectedDateKey={selectedPlanDateKey}
+          onSelectedDateChange={setSelectedPlanDateKey}
+        />
+      )}
 
       {activePage === "summary" && <SummaryPage />}
 

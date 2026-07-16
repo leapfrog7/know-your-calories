@@ -208,11 +208,15 @@ function AddFoodScreen({
 
   function handleAddOrUpdate(entry) {
     const dateKey = editingEntry?.date || targetDateKey || undefined;
+    const entryWithStatus = {
+      ...entry,
+      status: mode === "plan" ? "planned" : "consumed",
+    };
 
     if (editingEntry) {
-      updateEntryInDate(editingEntry.id, entry, dateKey);
+      updateEntryInDate(editingEntry.id, entryWithStatus, dateKey);
     } else {
-      addEntryToDate(entry, dateKey);
+      addEntryToDate(entryWithStatus, dateKey);
     }
 
     onFoodAdded();
