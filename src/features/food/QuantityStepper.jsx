@@ -1,6 +1,6 @@
 function QuantityStepper({ value, onChange }) {
-  const MIN_VALUE = 0.25;
-  const STEP = 0.25;
+  const MIN_VALUE = 0.1;
+  const STEP = 0.1;
 
   const normalizedValue = Number(value) || MIN_VALUE;
   const isAtMinimum = normalizedValue <= MIN_VALUE;
@@ -49,7 +49,7 @@ function QuantityStepper({ value, onChange }) {
         <div>
           <p className="text-sm font-black text-slate-950">Quantity</p>
           <p className="mt-0.5 text-xs font-medium text-slate-500">
-            Adjust in 0.25 serving steps
+            Adjust in 0.1 serving steps
           </p>
         </div>
 
