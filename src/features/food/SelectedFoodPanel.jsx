@@ -14,6 +14,7 @@ function SelectedFoodPanel({
   food,
   editingEntry = null,
   mode = "today",
+  initialMeal = null,
   onChangeFood,
   onAdd,
 }) {
@@ -22,7 +23,7 @@ function SelectedFoodPanel({
   const [portionIndex, setPortionIndex] = useState(initialPortionIndex);
   const [quantity, setQuantity] = useState(editingEntry?.quantity || 1);
   const [meal, setMeal] = useState(
-    () => editingEntry?.meal || getDefaultMealByTime(),
+    () => editingEntry?.meal || initialMeal || getDefaultMealByTime(),
   );
   const [, setFavoriteVersion] = useState(0);
 

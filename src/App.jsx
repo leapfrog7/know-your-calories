@@ -15,6 +15,7 @@ function App() {
   const [targetDateKey, setTargetDateKey] = useState(null);
   const [addMode, setAddMode] = useState("today");
   const [addReturnPage, setAddReturnPage] = useState("today");
+  const [initialMeal, setInitialMeal] = useState(null);
   const [selectedPlanDateKey, setSelectedPlanDateKey] = useState(() =>
     getTomorrowKey(),
   );
@@ -25,12 +26,14 @@ function App() {
     nextTargetDateKey = null,
     nextAddMode = "today",
     nextReturnPage = nextAddMode === "plan" ? "plan" : "today",
+    nextInitialMeal = null,
   ) {
     setQuickFoodId(foodId);
     setEditingEntry(entry);
     setTargetDateKey(nextTargetDateKey);
     setAddMode(nextAddMode);
     setAddReturnPage(nextReturnPage);
+    setInitialMeal(nextInitialMeal);
     setActivePage("add-food");
   }
 
@@ -40,6 +43,7 @@ function App() {
     setTargetDateKey(null);
     setAddMode("today");
     setAddReturnPage("today");
+    setInitialMeal(null);
   }
 
   function goToday() {
@@ -122,6 +126,7 @@ function App() {
           editingEntry={editingEntry}
           targetDateKey={targetDateKey}
           mode={addMode}
+          initialMeal={initialMeal}
           onBack={handleBackFromAddFood}
           onFoodAdded={handleFoodAdded}
         />

@@ -95,6 +95,7 @@ function AddFoodScreen({
   editingEntry = null,
   targetDateKey = null,
   mode = "today",
+  initialMeal = null,
   onBack,
   onFoodAdded,
 }) {
@@ -279,6 +280,7 @@ function AddFoodScreen({
         food={selectedFood}
         editingEntry={editingEntry}
         mode={mode}
+        initialMeal={initialMeal}
         onChangeFood={handleChangeFood}
         onAdd={handleAddOrUpdate}
       />

@@ -9,36 +9,25 @@ function MealLogItem({ entry, onDelete, onEdit, variant = "today" }) {
 
   return (
     <div
-      className={`flex w-full items-start justify-between gap-3 rounded-3xl border px-4 py-3.5 shadow-sm transition active:scale-[0.99] ${
+      className={`flex w-full items-start justify-between gap-3 border transition active:scale-[0.99] ${
         isPlan
-          ? "border-indigo-100 bg-white/90"
-          : "border-slate-100 bg-white"
+          ? "rounded-2xl border-slate-100 bg-slate-50 px-3 py-3"
+          : "rounded-3xl border-slate-100 bg-white px-4 py-3.5 shadow-sm"
       }`}
     >
       <div className="min-w-0 flex-1 pr-1">
-        <div className="flex items-center gap-2">
-          <p className="truncate text-sm font-black tracking-tight text-slate-950">
-            {entry.foodName}
-          </p>
-
-          {isPlan && (
-            <span className="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-indigo-600">
-              Plan
-            </span>
-          )}
-        </div>
+        <p className="truncate text-sm font-black tracking-tight text-slate-950">
+          {entry.foodName}
+        </p>
 
         <p className="mt-0.5 truncate text-xs font-semibold text-slate-500">
           {servingText}
         </p>
 
-        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        {!isPlan && (
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
           <span
-            className={`rounded-full px-2 py-1 text-[11px] font-black ${
-              isPlan
-                ? "bg-indigo-50 text-indigo-700"
-                : "bg-emerald-50 text-emerald-700"
-            }`}
+            className="rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-black text-emerald-700"
           >
             P {entry.protein}g
           </span>
@@ -50,13 +39,16 @@ function MealLogItem({ entry, onDelete, onEdit, variant = "today" }) {
           <span className="rounded-full bg-amber-50 px-2 py-1 text-[11px] font-black text-amber-700">
             F {entry.fat}g
           </span>
-        </div>
+          </div>
+        )}
       </div>
 
       <div className="flex shrink-0 flex-col items-end gap-2">
         <div
-          className={`min-w-[64px] rounded-2xl px-3 py-2 text-center shadow-sm ${
-            isPlan ? "bg-indigo-100" : "bg-green-100"
+          className={`rounded-2xl px-3 py-2 text-center ${
+            isPlan
+              ? "min-w-[58px] bg-indigo-50"
+              : "min-w-[64px] bg-green-100 shadow-sm"
           }`}
         >
           <p
