@@ -1,7 +1,11 @@
 import { useMemo } from "react";
-import { getSortedDayLogs } from "../features/meals/mealStorage";
+import {
+  getSortedDayLogs,
+  getWaterTotal,
+} from "../features/meals/mealStorage";
 import { calculateTotals, roundTotals } from "../features/meals/nutrition";
 import { formatDisplayDate } from "../features/meals/mealHelpers";
+import { formatWaterAmount } from "../features/hydration/hydrationHelpers";
 // import DataBackupPanel from "../components/settings/DataBackupPanel";
 
 function HistoryPage() {
@@ -31,7 +35,7 @@ function HistoryPage() {
               <h2 className="text-3xl font-black tracking-tight">History</h2>
 
               <p className="mt-2 text-sm font-medium leading-relaxed text-slate-400">
-                Review saved meals by date.
+                Review saved meals and hydration by date.
               </p>
             </div>
 
@@ -59,6 +63,7 @@ function HistoryPage() {
           {dayLogs.map((dayLog) => {
             const entries = dayLog.entries || [];
             const totals = roundTotals(calculateTotals(entries));
+            const waterTotalMl = getWaterTotal(dayLog.waterEntries);
 
             return (
               <HistoryDayCard
@@ -66,6 +71,7 @@ function HistoryPage() {
                 dayLog={dayLog}
                 entries={entries}
                 totals={totals}
+                waterTotalMl={waterTotalMl}
               />
             );
           })}
@@ -97,13 +103,13 @@ function EmptyHistory() {
       <p className="mt-4 font-black text-slate-950">No history yet</p>
 
       <p className="mx-auto mt-1 max-w-xs text-sm leading-relaxed text-slate-500">
-        Add foods today and they will appear here automatically by date.
+        Add food or water today and it will appear here automatically by date.
       </p>
     </div>
   );
 }
 
-function HistoryDayCard({ dayLog, entries, totals }) {
+function HistoryDayCard({ dayLog, entries, totals, waterTotalMl }) {
   return (
     <article className="overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white shadow-sm">
       <div className="flex items-start justify-between gap-4 p-4">
@@ -115,43 +121,62 @@ function HistoryDayCard({ dayLog, entries, totals }) {
           <p className="mt-1 text-sm font-medium text-slate-500">
             {entries.length} item{entries.length === 1 ? "" : "s"} logged
           </p>
+
+          {waterTotalMl > 0 && entries.length > 0 && (
+            <p className="mt-2 inline-flex rounded-full bg-cyan-50 px-2.5 py-1 text-xs font-black text-cyan-700 ring-1 ring-cyan-100">
+              Water {formatWaterAmount(waterTotalMl)}
+            </p>
+          )}
         </div>
 
-        <div className="shrink-0 rounded-2xl bg-slate-950 px-3 py-2 text-right">
-          <p className="text-lg font-black leading-none text-white">
-            {totals.calories}
-          </p>
-          <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-slate-400">
-            kcal
-          </p>
+        {entries.length > 0 ? (
+          <div className="shrink-0 rounded-2xl bg-slate-950 px-3 py-2 text-right">
+            <p className="text-lg font-black leading-none text-white">
+              {totals.calories}
+            </p>
+            <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-slate-400">
+              kcal
+            </p>
+          </div>
+        ) : (
+          <div className="shrink-0 rounded-2xl bg-cyan-50 px-3 py-2 text-right ring-1 ring-cyan-100">
+            <p className="text-sm font-black leading-none text-cyan-800">
+              {formatWaterAmount(waterTotalMl)}
+            </p>
+            <p className="mt-1 text-[10px] font-black uppercase tracking-wide text-cyan-600">
+              water
+            </p>
+          </div>
+        )}
+      </div>
+
+      {entries.length > 0 && (
+        <div className="grid grid-cols-3 gap-2 px-4 pb-4">
+          <SmallStat
+            label="Protein"
+            value={totals.protein}
+            className="bg-emerald-50 ring-1 ring-emerald-100"
+            labelClassName="text-emerald-700"
+            valueClassName="text-emerald-950"
+          />
+
+          <SmallStat
+            label="Carbs"
+            value={totals.carbs}
+            className="bg-sky-50 ring-1 ring-sky-100"
+            labelClassName="text-sky-700"
+            valueClassName="text-sky-950"
+          />
+
+          <SmallStat
+            label="Fat"
+            value={totals.fat}
+            className="bg-amber-50 ring-1 ring-amber-100"
+            labelClassName="text-amber-700"
+            valueClassName="text-amber-950"
+          />
         </div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-2 px-4 pb-4">
-        <SmallStat
-          label="Protein"
-          value={totals.protein}
-          className="bg-emerald-50 ring-1 ring-emerald-100"
-          labelClassName="text-emerald-700"
-          valueClassName="text-emerald-950"
-        />
-
-        <SmallStat
-          label="Carbs"
-          value={totals.carbs}
-          className="bg-sky-50 ring-1 ring-sky-100"
-          labelClassName="text-sky-700"
-          valueClassName="text-sky-950"
-        />
-
-        <SmallStat
-          label="Fat"
-          value={totals.fat}
-          className="bg-amber-50 ring-1 ring-amber-100"
-          labelClassName="text-amber-700"
-          valueClassName="text-amber-950"
-        />
-      </div>
+      )}
 
       {entries.length > 0 && (
         <div className="border-t border-slate-100 bg-slate-50/70 px-4 py-3">

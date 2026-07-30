@@ -1,7 +1,7 @@
 import { getTodayKey } from "./mealHelpers";
 
 const STORAGE_KEY = "kyc_daily_log_v1";
-const CURRENT_STORAGE_VERSION = 2;
+const CURRENT_STORAGE_VERSION = 3;
 
 const DEFAULT_STORAGE = {
   version: CURRENT_STORAGE_VERSION,
@@ -9,6 +9,10 @@ const DEFAULT_STORAGE = {
   settings: {
     defaultCalorieTarget: 2000,
     defaultProteinTarget: 80,
+    defaultWaterTargetMl: 2000,
+    defaultWaterQuickAddMl: 250,
+    hydrationDayStart: "07:00",
+    hydrationDayEnd: "22:00",
     mealPlanMode: "time",
     mealTimes: {
       Breakfast: "06:00",
@@ -25,6 +29,14 @@ function createId() {
   }
 
   return `entry_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+}
+
+function createWaterId() {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return `water-${crypto.randomUUID()}`;
+  }
+
+  return `water-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
 function isPlainObject(value) {
@@ -47,6 +59,27 @@ function normalizeEntry(entry, dateKey, options = {}) {
   };
 }
 
+function normalizeWaterEntries(entries) {
+  if (!Array.isArray(entries)) return [];
+
+  return entries
+    .filter((entry) => {
+      return (
+        entry &&
+        typeof entry === "object" &&
+        !Array.isArray(entry) &&
+        Number.isFinite(Number(entry.amountMl)) &&
+        Number(entry.amountMl) > 0
+      );
+    })
+    .map((entry) => ({
+      ...entry,
+      id: entry.id || createWaterId(),
+      amountMl: Math.round(Number(entry.amountMl)),
+      createdAt: entry.createdAt || new Date().toISOString(),
+    }));
+}
+
 function normalizeDayLog(dayLog, fallbackDateKey, options = {}) {
   const dateKey = dayLog?.date || fallbackDateKey;
 
@@ -55,6 +88,7 @@ function normalizeDayLog(dayLog, fallbackDateKey, options = {}) {
     entries: Array.isArray(dayLog?.entries)
       ? dayLog.entries.map((entry) => normalizeEntry(entry, dateKey, options))
       : [],
+    waterEntries: normalizeWaterEntries(dayLog?.waterEntries),
   };
 }
 
@@ -155,6 +189,7 @@ export function getDayLog(dateKey = getTodayKey()) {
     storage.days[dateKey] || {
       date: dateKey,
       entries: [],
+      waterEntries: [],
     }
   );
 }
@@ -262,7 +297,9 @@ export function getSortedDayLogs() {
       ...days[dateKey],
       entries: getConsumedEntries(days[dateKey]?.entries),
     }))
-    .filter((dayLog) => dayLog.entries.length > 0);
+    .filter((dayLog) => {
+      return dayLog.entries.length > 0 || dayLog.waterEntries.length > 0;
+    });
 }
 
 export function replaceAllDays(importedDays) {
@@ -282,7 +319,9 @@ export function replaceAllDays(importedDays) {
 }
 
 export function clearEntriesForDate(dateKey = getTodayKey()) {
+  const dayLog = getDayLog(dateKey);
   const updatedDayLog = {
+    ...dayLog,
     date: dateKey,
     entries: [],
   };
@@ -350,6 +389,7 @@ export function mergeImportedDays(importedDays) {
     }
 
     const entryMap = new Map();
+    const waterEntryMap = new Map();
 
     (existingDayLog.entries || []).forEach((entry) => {
       if (entry?.id) {
@@ -365,9 +405,24 @@ export function mergeImportedDays(importedDays) {
       }
     });
 
+    (existingDayLog.waterEntries || []).forEach((entry) => {
+      if (entry?.id) waterEntryMap.set(entry.id, entry);
+    });
+
+    (incomingDayLog.waterEntries || []).forEach((entry) => {
+      if (entry?.id && !waterEntryMap.has(entry.id)) {
+        waterEntryMap.set(entry.id, entry);
+      }
+    });
+
     mergedDays[dateKey] = {
       date: dateKey,
       entries: Array.from(entryMap.values()).sort((a, b) => {
+        return String(a.createdAt || "").localeCompare(
+          String(b.createdAt || ""),
+        );
+      }),
+      waterEntries: Array.from(waterEntryMap.values()).sort((a, b) => {
         return String(a.createdAt || "").localeCompare(
           String(b.createdAt || ""),
         );
@@ -427,6 +482,43 @@ export function getConsumedEntries(entries = []) {
 
 export function getPlannedEntries(entries = []) {
   return entries.filter((entry) => entry?.status === "planned");
+}
+
+export function addWaterToDate(amountMl, dateKey = getTodayKey()) {
+  const safeAmountMl = Math.round(Number(amountMl));
+  if (!Number.isFinite(safeAmountMl) || safeAmountMl <= 0) {
+    return getDayLog(dateKey);
+  }
+
+  const dayLog = getDayLog(dateKey);
+  const waterEntry = {
+    id: createWaterId(),
+    amountMl: safeAmountMl,
+    createdAt: new Date().toISOString(),
+  };
+
+  return saveDayLog(dateKey, {
+    ...dayLog,
+    waterEntries: [...(dayLog.waterEntries || []), waterEntry],
+  });
+}
+
+export function undoLastWaterEntry(dateKey = getTodayKey()) {
+  const dayLog = getDayLog(dateKey);
+  const waterEntries = [...(dayLog.waterEntries || [])];
+
+  waterEntries.pop();
+
+  return saveDayLog(dateKey, {
+    ...dayLog,
+    waterEntries,
+  });
+}
+
+export function getWaterTotal(waterEntries = []) {
+  return waterEntries.reduce((total, entry) => {
+    return total + (Number(entry?.amountMl) || 0);
+  }, 0);
 }
 
 export function resetMealSettings() {

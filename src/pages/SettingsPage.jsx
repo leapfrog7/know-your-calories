@@ -2,6 +2,7 @@ import DataBackupPanel from "../components/settings/DataBackupPanel";
 import TargetSettingsPanel from "../components/settings/TargetSettingsPanel";
 import ClearDataPanel from "../components/settings/ClearDataPanel";
 import MealPlanSettingsPanel from "../components/settings/MealPlanSettingsPanel";
+import HydrationSettingsPanel from "../components/settings/HydrationSettingsPanel";
 
 function SettingsPage() {
   return (
@@ -35,6 +36,8 @@ function SettingsPage() {
 
       <TargetSettingsPanel />
 
+      <HydrationSettingsPanel />
+
       <MealPlanSettingsPanel />
 
       <DataBackupPanel />
@@ -49,9 +52,9 @@ function SettingsPage() {
         </h2>
 
         <p className="mt-2 text-sm leading-relaxed text-slate-500">
-          Your meal logs are stored on this device. They are not uploaded to a
-          server. Use Export Backup before changing phones, clearing browser
-          data, or reinstalling the app.
+          Your meal and hydration logs are stored on this device. They are not
+          uploaded to a server. Use Export Backup before changing phones,
+          clearing browser data, or reinstalling the app.
         </p>
       </section>
 

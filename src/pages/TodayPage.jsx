@@ -6,7 +6,9 @@ import MealGroup from "../components/today/MealGroup";
 import InstallAppButton from "../components/ui/InstallAppButton";
 import BackupReminder from "../components/today/BackupReminder";
 import PlannedMealsPanel from "../components/today/PlannedMealsPanel";
+import HydrationCard from "../components/today/HydrationCard";
 import {
+  addWaterToDate,
   deleteEntryFromDate,
   getAllDays,
   getConsumedEntries,
@@ -14,6 +16,7 @@ import {
   getPlannedEntries,
   getTodayLog,
   updatePlannedMealStatus,
+  undoLastWaterEntry,
 } from "../features/meals/mealStorage";
 import {
   getFrequentFoodIds,
@@ -105,6 +108,14 @@ function TodayPage({ onOpenAddFood }) {
     setDayLog(updatePlannedMealStatus(meal, "skipped", dayLog.date));
   }
 
+  function handleAddWater(amountMl) {
+    setDayLog(addWaterToDate(amountMl, dayLog.date));
+  }
+
+  function handleUndoWater() {
+    setDayLog(undoLastWaterEntry(dayLog.date));
+  }
+
   function handleBackupNow() {
     const lastBackupAt = downloadBackupFile();
     setBackupReminder({ shouldShow: false, lastBackupAt });
@@ -118,6 +129,17 @@ function TodayPage({ onOpenAddFood }) {
   return (
     <div className="space-y-5">
       <TodaySummaryCard totals={totals} targets={settings} />
+
+      <HydrationCard
+        waterEntries={dayLog.waterEntries || []}
+        targetMl={settings.defaultWaterTargetMl}
+        quickAddMl={settings.defaultWaterQuickAddMl}
+        dayStart={settings.hydrationDayStart}
+        dayEnd={settings.hydrationDayEnd}
+        now={now}
+        onAdd={handleAddWater}
+        onUndo={handleUndoWater}
+      />
 
       <InstallAppButton />
 

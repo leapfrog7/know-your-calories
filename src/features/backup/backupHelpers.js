@@ -128,7 +128,7 @@ import { getAllDays, getMealSettings } from "../meals/mealStorage";
 import { getCustomFoods } from "../../data/customFoodUtils";
 
 const BACKUP_APP_ID = "know-your-calories";
-const BACKUP_VERSION = 2;
+const BACKUP_VERSION = 3;
 const LEGACY_BACKUP_REMINDER_KEY = "kyc_backup_reminder_v1";
 const BACKUP_REMINDER_STATE_KEY = "kyc_backup_reminder_v2";
 const BACKUP_REMINDER_INTERVAL_MS = 10 * 24 * 60 * 60 * 1000;
@@ -390,6 +390,24 @@ function validateDays(days) {
     if (!Array.isArray(dayLog.entries)) {
       throw new Error("Backup contains a day log with invalid entries.");
     }
+
+    if (
+      dayLog.waterEntries !== undefined &&
+      !Array.isArray(dayLog.waterEntries)
+    ) {
+      throw new Error("Backup contains invalid water entries.");
+    }
+
+    (dayLog.waterEntries || []).forEach((entry) => {
+      if (
+        !entry ||
+        typeof entry !== "object" ||
+        !Number.isFinite(Number(entry.amountMl)) ||
+        Number(entry.amountMl) <= 0
+      ) {
+        throw new Error("Backup contains an invalid water entry.");
+      }
+    });
   });
 }
 

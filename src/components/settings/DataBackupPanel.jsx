@@ -123,8 +123,8 @@ function DataBackupPanel() {
           </h2>
 
           <p className="mt-2 text-sm leading-relaxed text-slate-500">
-            Save your meal logs, custom foods, favorites, and targets as a
-            backup file and restore them on another device.
+            Save your meals, hydration, custom foods, favorites, and targets
+            as a backup file and restore them on another device.
           </p>
         </div>
 

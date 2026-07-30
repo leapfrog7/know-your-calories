@@ -21,7 +21,9 @@ function ClearDataPanel() {
     clearCustomFoods();
     clearBackupReminderState();
 
-    setStatus("All local meal data, custom foods, and favorites have been cleared.");
+    setStatus(
+      "All local meal, hydration, custom food, and favorite data has been cleared.",
+    );
 
     window.location.reload();
   }
@@ -39,8 +41,8 @@ function ClearDataPanel() {
           </h2>
 
           <p className="mt-2 text-sm leading-relaxed text-slate-500">
-            This clears all local meal logs and settings from this device.
-            Export a backup before using this.
+            This clears all local meal, hydration, and settings data from this
+            device. Export a backup before using this.
           </p>
         </div>
 
