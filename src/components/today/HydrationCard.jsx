@@ -101,7 +101,7 @@ function HydrationCard({
               <button
                 type="button"
                 onClick={() => addAmount(safeQuickAddMl)}
-                className="shrink-0 rounded-2xl bg-cyan-600 px-3.5 py-2.5 text-sm font-black text-white shadow-sm shadow-cyan-200 outline-none transition active:scale-[0.97] focus-visible:ring-4 focus-visible:ring-cyan-200"
+                className="min-h-11 shrink-0 rounded-xl bg-cyan-600 px-3.5 py-2 text-sm font-black text-white outline-none transition active:scale-[0.97] focus-visible:ring-4 focus-visible:ring-cyan-200"
               >
                 + {formatWaterAmount(safeQuickAddMl)}
               </button>
@@ -141,7 +141,7 @@ function HydrationCard({
         </div>
 
         {expanded && (
-          <div className="mt-3 rounded-3xl border border-cyan-100 bg-white/80 p-3 backdrop-blur-sm">
+          <div className="mt-3 border-t border-cyan-100 pt-3">
             <div className="mb-3 grid grid-cols-3 gap-2">
               <PaceValue label="Consumed" value={formatWaterAmount(totalMl)} />
               <PaceValue

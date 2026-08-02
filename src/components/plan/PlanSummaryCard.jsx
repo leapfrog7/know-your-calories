@@ -17,7 +17,7 @@ function PlanSummaryCard({
   );
 
   return (
-    <section className="rounded-[2rem] border border-indigo-100 bg-white p-4 shadow-sm">
+    <section className="rounded-2xl border border-indigo-100 bg-white p-4">
       <div className="flex items-center gap-2">
         <DateArrow
           label="Previous planning day"
@@ -50,7 +50,7 @@ function PlanSummaryCard({
         />
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-2">
+      <div className="mt-4 grid grid-cols-2 gap-2">
         <PlanTotal
           label="Calories"
           value={`${totals.calories} / ${calorieTarget}`}

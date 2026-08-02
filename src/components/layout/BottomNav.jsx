@@ -25,7 +25,7 @@ function BottomNav({
           />
 
           <NavButton
-            label="Summary"
+            label="Trends"
             emoji="📊"
             active={activePage === "summary"}
             onClick={onGoSummary}

@@ -40,11 +40,11 @@ function QuickAddStrip({ foods, onSelectFood }) {
   }, []);
 
   const favoriteFoods = useMemo(() => {
-    return favoriteIds.map(getFoodById).filter(Boolean);
+    return favoriteIds.map(getFoodById).filter(isSupportedFood);
   }, [favoriteIds]);
 
   const quickFoods = useMemo(() => {
-    return foods.filter((food) => !isCustomFood(food));
+    return foods.filter((food) => food?.source === "INDB");
   }, [foods]);
 
   const activeFoods =
@@ -74,11 +74,9 @@ function QuickAddStrip({ foods, onSelectFood }) {
           <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-600">
             Fast logging
           </p>
-
           <h3 className="mt-1 text-xl font-black tracking-tight text-slate-950">
             {getShelfTitle(mode)}
           </h3>
-
           <p className="mt-1 text-xs font-medium text-slate-500">
             {getShelfDescription(mode)}
           </p>
@@ -235,14 +233,8 @@ function getShelfTitle(mode) {
 }
 
 function getShelfDescription(mode) {
-  if (mode === "favorites") {
-    return "Foods you saved for repeated meals.";
-  }
-
-  if (mode === "custom") {
-    return "Your own saved foods for faster logging.";
-  }
-
+  if (mode === "favorites") return "Foods you saved for repeated meals.";
+  if (mode === "custom") return "Your own saved foods for faster logging.";
   return "Recent and frequently logged foods.";
 }
 
@@ -283,3 +275,7 @@ function getEmptyDescription(mode) {
 }
 
 export default QuickAddStrip;
+
+function isSupportedFood(food) {
+  return Boolean(food) && (food.source === "INDB" || isCustomFood(food));
+}

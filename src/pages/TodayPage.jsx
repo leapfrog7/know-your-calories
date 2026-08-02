@@ -163,37 +163,13 @@ function TodayPage({ onOpenAddFood }) {
       <QuickAddStrip foods={quickFoods} onSelectFood={onOpenAddFood} />
 
       <section>
-        <div className="mb-3">
-          <div className="mb-4 w-full rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex w-full items-start justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-600">
-                  Today’s log
-                </p>
-
-                <h2 className="mt-1 text-2xl font-black tracking-tight text-slate-950">
-                  Meals
-                </h2>
-
-                <p className="mt-1 text-sm font-medium text-slate-500">
-                  Track what you have eaten today.
-                </p>
-              </div>
-
-              <div className="shrink-0 rounded-2xl bg-emerald-50 px-3 py-2 text-center">
-                <p className="text-lg font-black leading-none text-emerald-700">
-                  {entries.length}
-                </p>
-                <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-emerald-700">
-                  item{entries.length === 1 ? "" : "s"}
-                </p>
-              </div>
-            </div>
-          </div>
+        <div className="mb-3 flex items-center justify-between gap-3 px-1">
+          <h2 className="text-lg font-black tracking-tight text-slate-950">Meals</h2>
+          <p className="text-xs font-bold text-slate-400">{entries.length} item{entries.length === 1 ? "" : "s"}</p>
         </div>
 
         {entries.length === 0 ? (
-          <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white p-7 text-center shadow-sm">
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-6 text-center">
             <p className="text-lg font-black text-slate-950">
               Start tracking today
             </p>
@@ -212,7 +188,7 @@ function TodayPage({ onOpenAddFood }) {
             </button>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="overflow-visible rounded-3xl border border-slate-200 bg-white px-5 shadow-sm">
             {MEAL_ORDER.map((meal) => (
               <MealGroup
                 key={meal}

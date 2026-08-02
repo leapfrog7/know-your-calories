@@ -33,7 +33,7 @@ function AppShell({
     activePage !== "plan";
 
   return (
-    <main className="min-h-screen bg-[#f7f7f2] text-slate-950">
+    <main className="min-h-dvh bg-[#f7f7f2] text-slate-950">
       <header className="sticky top-0 z-30 border-b border-slate-200/70 bg-[#f7f7f2]/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-2">
           <AppLogo subtitle={headerSubtitle} />

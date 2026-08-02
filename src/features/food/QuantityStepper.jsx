@@ -44,7 +44,7 @@ function QuantityStepper({ value, onChange }) {
   }
 
   return (
-    <div className="w-full rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+    <div className="w-full">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-black text-slate-950">Quantity</p>
@@ -53,12 +53,10 @@ function QuantityStepper({ value, onChange }) {
           </p>
         </div>
 
-        <div className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
-          Serving
-        </div>
+        <p className="text-xs font-black text-emerald-700">× serving</p>
       </div>
 
-      <div className="mt-4 flex items-center gap-2">
+      <div className="mt-2 flex items-center gap-2">
         <button
           type="button"
           onClick={decrease}
@@ -82,9 +80,6 @@ function QuantityStepper({ value, onChange }) {
             aria-label="Quantity"
           />
 
-          {/* <p className="mt-1 text-center text-[11px] font-semibold text-slate-400">
-            Minimum {MIN_VALUE}
-          </p> */}
         </div>
 
         <button

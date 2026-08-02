@@ -1,28 +1,22 @@
 function PortionSelector({ portions, selectedIndex, onChange }) {
   return (
-    <div>
-      <p className="text-sm font-black text-slate-950">Portion</p>
-
-      <div className="mt-2 grid gap-2">
+    <label className="block">
+      <span className="text-sm font-black text-slate-950">Portion</span>
+      <span className="mt-0.5 block text-xs font-medium text-slate-500">
+        Choose the serving shown on your plate.
+      </span>
+      <select
+        value={selectedIndex}
+        onChange={(event) => onChange(Number(event.target.value))}
+        className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-800 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+      >
         {portions.map((portion, index) => (
-          <button
-            key={`${portion.label}-${index}`}
-            type="button"
-            onClick={() => onChange(index)}
-            className={`rounded-2xl border px-4 py-3 text-left transition active:scale-[0.99] ${
-              selectedIndex === index
-                ? "border-emerald-600 bg-emerald-50 text-emerald-800"
-                : "border-slate-200 bg-white text-slate-700"
-            }`}
-          >
-            <p className="text-sm font-black">{portion.label}</p>
-            <p className="mt-0.5 text-xs font-semibold opacity-70">
-              {portion.type === "unit" ? "INDB standard serving" : "Gram option"}
-            </p>
-          </button>
+          <option key={`${portion.label}-${index}`} value={index}>
+            {portion.label}{portion.type === "unit" ? " · standard serving" : ""}
+          </option>
         ))}
-      </div>
-    </div>
+      </select>
+    </label>
   );
 }
 

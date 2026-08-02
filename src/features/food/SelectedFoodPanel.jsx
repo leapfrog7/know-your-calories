@@ -33,11 +33,14 @@ function SelectedFoodPanel({
 
   const safePortionIndex = food.portions?.[portionIndex] ? portionIndex : 0;
 
-  const selectedPortion = food.portions?.[safePortionIndex] || {
-    label: "100g",
-    type: "grams",
-    grams: 100,
-  };
+  const selectedPortion = useMemo(
+    () => food.portions?.[safePortionIndex] || {
+      label: "100g",
+      type: "grams",
+      grams: 100,
+    },
+    [food.portions, safePortionIndex],
+  );
 
   const preview = useMemo(() => {
     return calculateNutrition(food, selectedPortion, quantity);
@@ -82,18 +85,18 @@ function SelectedFoodPanel({
 
   return (
     <div className="space-y-4 pb-28">
-      <div className="flex w-full justify-end">
+      <div className="flex w-full justify-start">
         <button
           type="button"
           onClick={onChangeFood}
-          className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-black text-slate-700 shadow-sm transition active:scale-[0.98] active:bg-slate-50"
+          className="inline-flex min-h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-black text-slate-700 shadow-sm transition active:scale-[0.98] active:bg-slate-50"
           aria-label={isEditing ? "Cancel editing" : "Change selected food"}
         >
           <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
             ←
           </span>
          <span>
-  {isEditing ? "Cancel edit" : isPlanMode ? "Back to plan" : "Change 📝"}
+  {isEditing ? "Cancel edit" : "Back to search"}
 </span>
         </button>
       </div>
@@ -103,7 +106,7 @@ function SelectedFoodPanel({
           <div className="flex items-start gap-4">
             <div className="min-w-0 flex-1">
              <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-600">
-  {isPlanMode ? "Planning food" : isEditing ? "Editing food" : "Selected food"}
+  {isEditing ? "Editing food" : `Step 2 of 2 · ${isPlanMode ? "Add to plan" : "Configure serving"}`}
 </p>
 
               <h2 className="mt-1 line-clamp-2 text-2xl font-black tracking-tight text-slate-950">
@@ -140,14 +143,6 @@ function SelectedFoodPanel({
                 }
               />
 
-              <div className="rounded-2xl bg-amber-50 px-3 py-1.5 text-center">
-                <p className="text-sm font-black leading-none text-amber-700">
-                  {preview.calories}
-                </p>
-                <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-amber-700/70">
-                  kcal
-                </p>
-              </div>
             </div>
           </div>
 
@@ -158,43 +153,19 @@ function SelectedFoodPanel({
           )}
         </div>
 
-        <div className="border-t border-slate-100 px-5 py-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-black text-slate-950">Meal</p>
-              <p className="mt-0.5 text-xs font-medium text-slate-500">
-                Choose where to log this food.
-              </p>
-            </div>
+        <div className="space-y-5 border-t border-slate-100 bg-slate-50/60 p-5">
+          <label className="block">
+            <span className="text-sm font-black text-slate-950">Meal</span>
+            <span className="mt-0.5 block text-xs font-medium text-slate-500">Choose where this food belongs.</span>
+            <select
+              value={meal}
+              onChange={(event) => setMeal(event.target.value)}
+              className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-800 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+            >
+              {MEAL_ORDER.map((mealName) => <option key={mealName} value={mealName}>{mealName}</option>)}
+            </select>
+          </label>
 
-            <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
-              {meal}
-            </span>
-          </div>
-
-          <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {MEAL_ORDER.map((mealName) => {
-              const isSelected = meal === mealName;
-
-              return (
-                <button
-                  key={mealName}
-                  type="button"
-                  onClick={() => setMeal(mealName)}
-                  className={`shrink-0 rounded-2xl border px-4 py-3 text-sm font-black transition active:scale-[0.98] ${
-                    isSelected
-                      ? "border-slate-950 bg-slate-950 text-white shadow-sm"
-                      : "border-slate-200 bg-white text-slate-600"
-                  }`}
-                >
-                  {mealName}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="space-y-4 border-t border-slate-100 bg-slate-50/60 p-5">
           <PortionSelector
             portions={food.portions || []}
             selectedIndex={safePortionIndex}

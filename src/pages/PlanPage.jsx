@@ -89,7 +89,7 @@ function PlanPage({
         + Add food
       </button>
 
-      <section className="space-y-3" aria-label="Planned meals">
+      <section className="overflow-hidden rounded-2xl border border-indigo-100 bg-white" aria-label="Planned meals">
         {MEAL_ORDER.map((meal) => (
           <MealGroup
             key={meal}

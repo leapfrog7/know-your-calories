@@ -1,6 +1,6 @@
-function FoodSearchInput({ value, onChange }) {
+function FoodSearchInput({ value, onChange, placeholder = "Search roti, dal, rice..." }) {
   return (
-    <div className="0 bg-white px-2 py-2 backdrop-blur-xl">
+    <div>
       <label className="sr-only" htmlFor="food-search">
         Search food
       </label>
@@ -10,9 +10,9 @@ function FoodSearchInput({ value, onChange }) {
         type="search"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        placeholder="Search roti, dal, rice..."
+        placeholder={placeholder}
         autoFocus
-        className="w-full rounded-3xl border border-slate-200 bg-white px-5 py-4 text-base font-semibold text-slate-950 outline-none shadow-sm placeholder:text-slate-400 focus:border-emerald-500"
+        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-base font-semibold text-slate-950 outline-none placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
       />
     </div>
   );
